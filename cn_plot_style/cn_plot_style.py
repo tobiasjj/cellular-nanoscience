@@ -365,7 +365,8 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
                 line_scale=1.0, marker_scale=1.0, pad_scale=1.0,
                 text_scale=1.0, tick_scale=1.0, cycle=None, usetex=True,
                 right_spine=False, top_spine=False, right_ticks=False,
-                top_ticks=False, fig_dpi=150, save_dpi=300, **kwargs):
+                top_ticks=False, autolayout=True, fig_dpi=150, save_dpi=300,
+                **kwargs):
     """
     ######### Cookbook/Matplotlib/LaTeX Examples ###########
     ##### Producing Graphs for Publication using LaTeX #####
@@ -466,6 +467,11 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
         'legend.fancybox': False,
         'legend.numpoints': 1,
         'legend.handlelength': 3.0 * context_scale * scale,
+        
+        # Automatically adjust subplot parameters to make the plot fit the
+        #figure
+        'figure.autolayout': autolayout,
+
 
         # Resolution
         'figure.dpi': fig_dpi,
@@ -483,7 +489,7 @@ def set_plot_params(*args, **kwargs):
 
 class cn_plot(object):
     def __init__(self, *args, dark=False, color=True, color_index=None,
-                 lighten=0.3, tight_layout=True, **kwargs):
+                 lighten=0.3, **kwargs):
         self._rcparams = plt.rcParams.copy()
 
         self.bw = not color and color_index is None
@@ -494,7 +500,6 @@ class cn_plot(object):
         self.iter_dashes = iter(self.dashes)
         self.iter_markers = iter(self.markers)
         self.lighten = lighten
-        self.tight_layout = tight_layout
 
         kwargs['dark'] = dark
         kwargs['color'] = color
@@ -513,8 +518,6 @@ class cn_plot(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        if self.tight_layout:
-            plt.tight_layout()
         plt.rcParams.clear()
         plt.rcParams.update(self._rcparams)
         # Workaround for text rendered with TeX
