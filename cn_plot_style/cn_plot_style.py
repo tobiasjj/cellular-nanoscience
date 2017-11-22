@@ -45,7 +45,7 @@ with cnps.cn_plot(context='twocolumn', dash=True) as cnp:
     ax.set_ylabel('Amplitude')
     ax2.set_ylabel('Amplitude')
 
-# Plot data for a paper with a width of 175 mm, on one axis, black and white,
+# Plot data for a paper with a width of 85 mm, on one axis, black and white,
 # and cycle through dashes:
 with cnps.cn_plot(context='paper', fig_width=85, unit='mm', color=False,
                   color_index=0, dash=True) as cnp:
