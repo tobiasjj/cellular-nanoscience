@@ -70,7 +70,7 @@ with cnps.cn_plot(context='paper', right_spine=True, dash=True) as cnp:
 
     ax2 = ax.twinx()
     lns2 = ax2.plot(x, residual(out.params, x), label='fit')
-    cnp.set_axis_color(ax2)
+    cnp.set_axis_color(ax=ax2)
 
     cnps.legend(lns1, lns2)
 
