@@ -353,7 +353,8 @@ def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
         'figure.facecolor': background,
         'figure.edgecolor': background,
         'savefig.facecolor': background,
-        'savefig.edgecolor': background
+        'savefig.edgecolor': background,
+        'nbagg.transparent': not dark
     }
 
     return params
