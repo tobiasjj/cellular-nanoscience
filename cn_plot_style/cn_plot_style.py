@@ -131,6 +131,7 @@ _dashes = [
 _context_width = {
     'default': 6.89,
     'twocolumn': 3.35,
+    'notebook': 4.5,
     'talk': 5.17,
     'poster': 10
 }
@@ -138,6 +139,7 @@ _context_width = {
 # Figure aspect ratio according to the context (default to the golden ratio)
 _context_aspect = {
     'default': constants.golden_ratio,
+    'notebook': 4 / 3,
     'talk': 4 / 3
 }
 
@@ -145,7 +147,7 @@ _context_aspect = {
 # scaling appropriate for a paper, i.e. 1.0)
 _context_scale = {
     'default': 1.0,
-    'notebook': 1.25,
+    'notebook': 1.15,
     'talk': 1.5,
     'poster': 2.0
 }
