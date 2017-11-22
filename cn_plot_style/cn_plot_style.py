@@ -353,8 +353,7 @@ def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
         'figure.facecolor': background,
         'figure.edgecolor': background,
         'savefig.facecolor': background,
-        'savefig.edgecolor': background,
-        'nbagg.transparent': not dark
+        'savefig.edgecolor': background
     }
 
     return params
@@ -366,7 +365,7 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
                 text_scale=1.0, tick_scale=1.0, cycle=None, usetex=True,
                 right_spine=False, top_spine=False, right_ticks=False,
                 top_ticks=False, autolayout=True, fig_dpi=150, save_dpi=300,
-                **kwargs):
+                transparent_save=True, **kwargs):
     """
     ######### Cookbook/Matplotlib/LaTeX Examples ###########
     ##### Producing Graphs for Publication using LaTeX #####
@@ -467,15 +466,18 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
         'legend.fancybox': False,
         'legend.numpoints': 1,
         'legend.handlelength': 3.0 * context_scale * scale,
-        
-        # Automatically adjust subplot parameters to make the plot fit the
-        #figure
-        'figure.autolayout': autolayout,
 
+        # Automatically adjust subplot parameters to make the plot fit the
+        # figure
+        'figure.autolayout': autolayout,
 
         # Resolution
         'figure.dpi': fig_dpi,
-        'savefig.dpi': save_dpi
+        'savefig.dpi': save_dpi,
+
+        # Transparency of background for nbagg backend and for saved figures
+        'nbagg.transparent': False,
+        'savefig.transparent': transparent_save
     })
 
     return params
