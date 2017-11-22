@@ -519,9 +519,14 @@ class cn_plot(object):
                         'text.latex.preamble']:
                 plt.rcParams[key] = self.rcdict[key]
 
-    def set_axis_color(self, ax, color=None, color_index=None, labels=True,
-                       tick_lines=True, tick_labels=True, axis='y'):
-        if color_index is None:
+    def set_axis_color(self, ax=None, last_line_color=True, color=None,
+                       color_index=None, labels=True, tick_lines=True,
+                       tick_labels=True, axis='y'):
+        ax = ax or plt.gca()
+
+        if last_line_color:
+            color = color or ax.lines[-1].get_color()
+        elif color_index is None:
             color = color or self.color
         else:
             color = color or self.colors[color_index]
