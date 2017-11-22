@@ -526,47 +526,20 @@ class cn_plot(object):
                         'text.latex.preamble']:
                 plt.rcParams[key] = self.rcdict[key]
 
+    def set_axis_color(self, last_line_color=True, color=None,
+                       color_index=None, **kwargs):
+        if not last_line_color:
+            if color_index is None:
+                color = color or self.color
+            else:
+                color = color or self.colors[color_index]
 
-    def set_axis_color(self, ax=None, last_line_color=True, color=None,
-                       color_index=None, labels=True, tick_lines=True,
-                       tick_labels=True, axis='y'):
-        ax = ax or plt.gca()
-
-        if last_line_color:
-            color = color or ax.lines[-1].get_color()
-        elif color_index is None:
-            color = color or self.color
-        else:
-            color = color or self.colors[color_index]
-
-        alpha = 1.0 - self.lighten
+        lighten = self.lighten
         if self.bw:
             # The lightening encodes the grey value. Do no extra lightening.
-            alpha = 1.0
+            lighten = 0.0
 
-        if axis == 'x':
-            ax_axis = ax.xaxis
-            ax_ticklines = ax.get_xticklines()
-            ax_ticklabels = ax.get_xticklabels()
-        else:
-            ax_axis = ax.yaxis
-            ax_ticklines = ax.get_yticklines()
-            ax_ticklabels = ax.get_yticklabels()
-
-        if labels:
-            ax_axis.label.set_color(color)
-            ax_axis.label.set_alpha(alpha)
-        # ax.tick_params('y', colors=colors)
-        if tick_lines:
-            for tick in ax_ticklines:
-                tick.set_color(color)
-                tick.set_alpha(alpha)
-        if tick_labels:
-            for label in ax_ticklabels:
-                label.set_color(color)
-                label.set_alpha(alpha)
-
-        return color
+        return set_axis_color(color=color, lighten=lighten, **kwargs)
 
     @property
     def color(self):
@@ -591,6 +564,39 @@ class cn_plot(object):
             self.iter_markers = iter(self.markers)
             marker = next(self.iter_markers)
         return marker
+
+
+def set_axis_color(ax=None, color=None, lighten=0.3, labels=True,
+                   tick_lines=True, tick_labels=True, axis='y'):
+    ax = ax or plt.gca()
+
+    color = color or ax.lines[-1].get_color()
+
+    alpha = 1.0 - lighten
+
+    if axis == 'x':
+        ax_axis = ax.xaxis
+        ax_ticklines = ax.get_xticklines()
+        ax_ticklabels = ax.get_xticklabels()
+    else:
+        ax_axis = ax.yaxis
+        ax_ticklines = ax.get_yticklines()
+        ax_ticklabels = ax.get_yticklabels()
+
+    if labels:
+        ax_axis.label.set_color(color)
+        ax_axis.label.set_alpha(alpha)
+    # ax.tick_params('y', colors=colors)
+    if tick_lines:
+        for tick in ax_ticklines:
+            tick.set_color(color)
+            tick.set_alpha(alpha)
+    if tick_labels:
+        for label in ax_ticklabels:
+            label.set_color(color)
+            label.set_alpha(alpha)
+
+    return color
 
 
 def legend(*lines, axis=None):
