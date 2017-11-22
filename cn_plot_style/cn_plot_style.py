@@ -482,24 +482,25 @@ def set_plot_params(*args, **kwargs):
 
 
 class cn_plot(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, dark=False, color=True, color_index=None,
+                 lighten=0.3, tight_layout=True, **kwargs):
         self._rcparams = plt.rcParams.copy()
 
-        kwargs['dark'] = kwargs.pop('dark', False)
-        color = kwargs.pop('color', True)
-        kwargs['color'] = color
-        kwargs['color_index'] = kwargs.pop('color_index', None)
-        self.bw = not color and kwargs['color_index'] is None
-        self.colors = _colors(dark=kwargs['dark'], color=kwargs['color'],
-                              color_index=kwargs['color_index'])
+        self.bw = not color and color_index is None
+        self.colors = _colors(dark=dark, color=color, color_index=color_index)
         self.dashes = _dashes.copy()
         self.markers = _markers.copy()
         self.iter_colors = iter(self.colors)
         self.iter_dashes = iter(self.dashes)
         self.iter_markers = iter(self.markers)
-        self.lighten = kwargs.pop('lighten', 0.3)
+        self.lighten = lighten
+        self.tight_layout = tight_layout
 
-        self.rcdict = plot_params(*args, lighten=self.lighten, **kwargs)
+        kwargs['dark'] = dark
+        kwargs['color'] = color
+        kwargs['color_index'] = color_index
+        kwargs['lighten'] = lighten
+        self.rcdict = plot_params(*args, **kwargs)
 
         try:
             plt.rcParams.update(self.rcdict)
@@ -512,6 +513,8 @@ class cn_plot(object):
         return self
 
     def __exit__(self, type, value, traceback):
+        if self.tight_layout:
+            plt.tight_layout()
         plt.rcParams.clear()
         plt.rcParams.update(self._rcparams)
         # Workaround for text rendered with TeX
@@ -519,6 +522,7 @@ class cn_plot(object):
             for key in ['text.usetex', 'text.latex.unicode',
                         'text.latex.preamble']:
                 plt.rcParams[key] = self.rcdict[key]
+
 
     def set_axis_color(self, ax=None, last_line_color=True, color=None,
                        color_index=None, labels=True, tick_lines=True,
