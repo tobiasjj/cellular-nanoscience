@@ -570,7 +570,7 @@ class cn_plot(object):
         return marker
 
 
-def set_axis_color(ax=None, color=None, lighten=0.3, labels=True,
+def set_axis_color(ax=None, color=None, lighten=0.3, label=True, ticks=True,
                    tick_lines=True, tick_labels=True, axis='y'):
     ax = ax or plt.gca()
 
@@ -587,15 +587,15 @@ def set_axis_color(ax=None, color=None, lighten=0.3, labels=True,
         ax_ticklines = ax.get_yticklines()
         ax_ticklabels = ax.get_yticklabels()
 
-    if labels:
+    if label:
         ax_axis.label.set_color(color)
         ax_axis.label.set_alpha(alpha)
     # ax.tick_params('y', colors=colors)
-    if tick_lines:
+    if ticks and tick_lines:
         for tick in ax_ticklines:
             tick.set_color(color)
             tick.set_alpha(alpha)
-    if tick_labels:
+    if ticks and tick_labels:
         for label in ax_ticklabels:
             label.set_color(color)
             label.set_alpha(alpha)
