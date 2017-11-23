@@ -131,7 +131,7 @@ _dashes = [
 _context_width = {
     'default': 6.89,
     'twocolumn': 3.35,
-    'notebook': 4.5,
+    'notebook': 5,
     'talk': 5.17,
     'poster': 10
 }
