@@ -328,17 +328,21 @@ def cyclers(color=True, marker=False, dash=False, colors=None, markers=None,
 
 
 def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
-          **kwargs):
+          lighten_grid=None, **kwargs):
     if lighten_edges is None:
         lighten_edges = lighten
     if lighten_text is None:
         lighten_text = lighten
+    if lighten_grid is None:
+        lighten_grid = lighten_edges
     foreground_text = str(0.0 + lighten_text)
     foreground_edges = str(0.0 + lighten_edges)
+    grid = str(0.0 + lighten_grid)
     background = 'white'
     if dark:
         foreground_text = str(1.0 - lighten_text)
         foreground_edges = str(1.0 - lighten_edges)
+        grid = str(1.0 - lighten_grid)
         background = 'black'
 
     params = {
@@ -350,7 +354,7 @@ def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
         'axes.labelcolor': foreground_text,
         'xtick.color': foreground_text,
         'ytick.color': foreground_text,
-        'grid.color': foreground_edges,
+        'grid.color': grid,
         'legend.edgecolor': foreground_edges,
         'figure.facecolor': background,
         'figure.edgecolor': background,
