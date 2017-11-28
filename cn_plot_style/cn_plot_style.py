@@ -65,12 +65,13 @@ ticks, and cycle through colors and dashes:
 from mpl_toolkits.axes_grid1 import host_subplot, host_axes
 with cnps.cn_plot(context='paper', right_spine=True, dash=True) as cnp:
     ax = host_subplot(111)
-    lns1 = ax.plot(x, data, label='data')
-    cnp.set_axis_color()
-
     ax2 = ax.twinx()
-    lns2 = ax2.plot(x, residual(out.params, x), label='fit')
-    cnp.set_axis_color(ax=ax2)
+
+    lns1 = ax.plot(x, noisy_data, label='data')
+    cnp.set_axis_color(ax=ax)
+
+    lns2 = ax2.plot(x, data, label='fit')
+    cnp.set_axis_color()
 
     cnps.legend(lns1, lns2)
 
@@ -86,21 +87,21 @@ with cnps.cn_plot(context='paper', right_spine=True, dash=True) as cnp:
 with cnps.cn_plot(context='paper', dash=True, fig_width=373.44, unit='pt',
                   aspect_ratio=4/3, right_spine=True, top_spine=True) as cnp:
     fig, ax = plt.subplots()
-    ax2 = fig.add_subplot(111, frame_on=False)
-    ax2.xaxis.set_label_position('top')
-    ax2.yaxis.set_label_position('right')
-    ax2.xaxis.tick_top()
-    ax2.yaxis.tick_right()
+    ax2 = link_ax(fig=fig, link_ax=ax)
+    # fig.add_subplot(111, frame_on=False)
+    # ax2.xaxis.set_label_position('top')
+    # ax2.yaxis.set_label_position('right')
+    # ax2.xaxis.tick_top()
+    # ax2.yaxis.tick_right()
+    # cnps.link_ax_cycle(ax, ax2)
 
-    cnps.link_ax_cycle(ax, ax2)
-
-    lns1 = ax.plot(x, data, label='data')
+    lns1 = ax.plot(x, noisy_data, label='data')
     cnp.set_axis_color(ax=ax)
 
-    lns2 = ax2.plot(x, residual(out.params, x), label='fit')
+    lns2 = ax2.plot(x, data, label='fit')
     cnp.set_axis_color(ax=ax2)
 
-    # cps.legend(lns1, lns2)
+    # cnps.legend(lns1, lns2)
 
     ax.set_xlabel(r'Time (a.\,u.)')
     ax.set_ylabel(r'Amplitude (\textmu m)')
@@ -653,3 +654,17 @@ def legend(*lines, axis=None):
 
 def link_ax_cycle(ax1, ax2):
     ax2._get_lines.prop_cycler = ax1._get_lines.prop_cycler
+
+
+def second_ax(fig=None, link_ax=None):
+    fig = fig or plt.gcf()
+    ax2 = fig.add_subplot(111, frame_on=False)
+    ax2.xaxis.set_label_position('top')
+    ax2.yaxis.set_label_position('right')
+    ax2.xaxis.tick_top()
+    ax2.yaxis.tick_right()
+
+    if link_ax:
+        link_ax_cycle(link_ax, ax2)
+
+    return ax2
