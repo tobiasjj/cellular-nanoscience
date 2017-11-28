@@ -664,7 +664,7 @@ def second_ax(fig=None, link_ax=None, spines=True):
     ax.xaxis.tick_top()
     ax.yaxis.tick_right()
 
-    if enable_spines:
+    if spines:
         ax.spines['top'].set_visible(True)
         ax.spines['right'].set_visible(True)
 
