@@ -656,7 +656,7 @@ def link_ax_cycle(ax1, ax2):
     ax2._get_lines.prop_cycler = ax1._get_lines.prop_cycler
 
 
-def second_ax(fig=None, link_ax=None, spines=True):
+def second_ax(fig=None, link_ax=None, enable_spines=True, spines_ax=None):
     fig = fig or plt.gcf()
     ax = fig.add_subplot(111, frame_on=False)
     ax.xaxis.set_label_position('top')
@@ -664,11 +664,12 @@ def second_ax(fig=None, link_ax=None, spines=True):
     ax.xaxis.tick_top()
     ax.yaxis.tick_right()
 
-    if spines:
-        ax.spines['top'].set_visible(True)
-        ax.spines['right'].set_visible(True)
-
     if link_ax:
         link_ax_cycle(link_ax, ax)
+
+    if enable_spines:
+        spines_ax = spines_ax or fig.gca()
+        spines_ax.spines['top'].set_visible(True)
+        spines_ax.spines['right'].set_visible(True)
 
     return ax
