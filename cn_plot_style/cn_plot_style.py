@@ -658,6 +658,12 @@ def link_ax_cycle(ax1, ax2):
 
 def second_ax(fig=None, link_ax=None, enable_spines=True, spines_ax=None):
     fig = fig or plt.gcf()
+
+    if enable_spines:
+        spines_ax = spines_ax or fig.gca()
+        spines_ax.spines['top'].set_visible(True)
+        spines_ax.spines['right'].set_visible(True)
+
     ax = fig.add_subplot(111, frame_on=False)
     ax.xaxis.set_label_position('top')
     ax.yaxis.set_label_position('right')
@@ -667,9 +673,5 @@ def second_ax(fig=None, link_ax=None, enable_spines=True, spines_ax=None):
     if link_ax:
         link_ax_cycle(link_ax, ax)
 
-    if enable_spines:
-        spines_ax = spines_ax or fig.gca()
-        spines_ax.spines['top'].set_visible(True)
-        spines_ax.spines['right'].set_visible(True)
 
     return ax
