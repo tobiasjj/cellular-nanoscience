@@ -87,7 +87,7 @@ with cnps.cn_plot(context='paper', right_spine=True, dash=True) as cnp:
 with cnps.cn_plot(context='paper', dash=True, fig_width=373.44, unit='pt',
                   aspect_ratio=4/3, right_spine=True, top_spine=True) as cnp:
     fig, ax = plt.subplots()
-    ax2 = link_ax(fig=fig, link_ax=ax)
+    ax2 = cnps.second_ax(fig=fig, link_ax=ax)
     # fig.add_subplot(111, frame_on=False)
     # ax2.xaxis.set_label_position('top')
     # ax2.yaxis.set_label_position('right')
