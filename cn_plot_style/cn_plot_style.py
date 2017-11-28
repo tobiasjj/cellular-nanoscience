@@ -611,27 +611,34 @@ def set_axis_color(ax=None, color=None, lighten=0.3, label=True, ticks=True,
 
     alpha = 1.0 - lighten
 
+    axes_axis = []
+    axes_ticklines = []
+    axes_ticklabels = []
     if axis in ['x', 'X', 'both']:
-        ax_axis = ax.xaxis
-        ax_ticklines = ax.get_xticklines()
-        ax_ticklabels = ax.get_xticklabels()
+        axes_axis.append(ax.xaxis)
+        axes_ticklines.append(ax.get_xticklines())
+        axes_ticklabels.append(ax.get_xticklabels())
     if axis in ['y', 'Y', 'both']:
-        ax_axis = ax.yaxis
-        ax_ticklines = ax.get_yticklines()
-        ax_ticklabels = ax.get_yticklabels()
+        axes_axis.append(ax.yaxis)
+        axes_ticklines.append(ax.get_yticklines())
+        axes_ticklabels.append(ax.get_yticklabels())
 
-    if label:
-        ax_axis.label.set_color(color)
-        ax_axis.label.set_alpha(alpha)
+    for ax_axis in axes_axis:
+        if label:
+            ax_axis.label.set_color(color)
+            ax_axis.label.set_alpha(alpha)
+
     # ax.tick_params('y', colors=colors)
     if ticks and tick_lines:
-        for tick in ax_ticklines:
-            tick.set_color(color)
-            tick.set_alpha(alpha)
+        for ax_ticklines in axes_ticklines:
+            for tick in ax_ticklines:
+                tick.set_color(color)
+                tick.set_alpha(alpha)
     if ticks and tick_labels:
-        for label in ax_ticklabels:
-            label.set_color(color)
-            label.set_alpha(alpha)
+        for ax_ticklabels in axes_ticklabels:
+            for label in ax_ticklabels:
+                label.set_color(color)
+                label.set_alpha(alpha)
 
     return color
 
