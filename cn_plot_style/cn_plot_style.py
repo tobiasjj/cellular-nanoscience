@@ -83,7 +83,7 @@ with cnps.cn_plot(context='paper', right_spine=True, dash=True) as cnp:
 # and dashes, with a figure width of 373.44 pt and an aspect_ratio of 4/3.
 # Finally, save the figure (the save command should be within the with
 # statement).
-with cnps.cn_plot(context='paper', fig_width=373.44, unit='pt',
+with cnps.cn_plot(context='paper', dash=True, fig_width=373.44, unit='pt',
                   aspect_ratio=4/3, right_spine=True, top_spine=True) as cnp:
     fig, ax = plt.subplots()
     ax2 = fig.add_subplot(111, frame_on=False)
@@ -92,11 +92,12 @@ with cnps.cn_plot(context='paper', fig_width=373.44, unit='pt',
     ax2.xaxis.tick_top()
     ax2.yaxis.tick_right()
 
-    lns1 = ax.plot(x, data, color=cnp.color, dashes=cnp.dash, label='fit')
+    cnps.link_ax_cycle(ax, ax2)
+
+    lns1 = ax.plot(x, data, label='data')
     cnp.set_axis_color(ax=ax)
 
-    lns2 = ax2.plot(x, residual(out.params, x), color=cnp.color,
-                    dashes=cnp.dash, label='fit')
+    lns2 = ax2.plot(x, residual(out.params, x), label='fit')
     cnp.set_axis_color(ax=ax2)
 
     # cps.legend(lns1, lns2)
@@ -648,3 +649,7 @@ def legend(*lines, axis=None):
     lns = list(itertools.chain(*lines))
     labs = [l.get_label() for l in lns]
     ax.legend(lns, labs)
+
+
+def link_ax_cycle(ax1, ax2):
+    ax2._get_lines.prop_cycler = ax1._get_lines.prop_cycler
