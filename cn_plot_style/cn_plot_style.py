@@ -60,8 +60,8 @@ with cnps.cn_plot(context='paper', fig_width=85, unit='mm', color=False,
     ax.set_ylabel('Amplitude')
     ax2.set_ylabel('Amplitude')
 
-# Plot data for a 'paper' on two axes with different  y ticks, and cycle
-# through colors and dashes:
+# Plot data for a 'paper' on two axes, sharing the x axis, with different y
+ticks, and cycle through colors and dashes:
 from mpl_toolkits.axes_grid1 import host_subplot, host_axes
 with cnps.cn_plot(context='paper', right_spine=True, dash=True) as cnp:
     ax = host_subplot(111)
@@ -78,6 +78,35 @@ with cnps.cn_plot(context='paper', right_spine=True, dash=True) as cnp:
     ax.set_xlabel('Time')
     ax.set_ylabel('Amplitude')
     ax2.set_ylabel('Amplitude')
+
+# Plot data for a 'paper' with two independent axes, and cycle through colors
+# and dashes, with a figure width of 373.44 pt and an aspect_ratio of 4/3.
+# Finally, save the figure (the save command should be within the with
+# statement).
+with cnps.cn_plot(context='paper', fig_width=373.44, unit='pt',
+                  aspect_ratio=4/3, right_spine=True, top_spine=True) as cnp:
+    fig, ax = plt.subplots()
+    ax2 = fig.add_subplot(111, frame_on=False)
+    ax2.xaxis.set_label_position('top')
+    ax2.yaxis.set_label_position('right')
+    ax2.xaxis.tick_top()
+    ax2.yaxis.tick_right()
+
+    lns1 = ax.plot(x, data, color=cnp.color, dashes=cnp.dash, label='fit')
+    cnp.set_axis_color(ax=ax)
+
+    lns2 = ax2.plot(x, residual(out.params, x), color=cnp.color,
+                    dashes=cnp.dash, label='fit')
+    cnp.set_axis_color(ax=ax2)
+
+    # cps.legend(lns1, lns2)
+
+    ax.set_xlabel(r'Time (a.\,u.)')
+    ax.set_ylabel(r'Amplitude (\textmu m)')
+    ax2.set_xlabel(r'Time2 (a.\,u.)')
+    ax2.set_ylabel(r'Light sheet length (\textmu m)')
+
+    plt.savefig('test.png')
 """
 __author__ = "Tobias Jachowski"
 __copyright__ = "Copyright 2017"
@@ -337,12 +366,12 @@ def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
         lighten_grid = lighten_edges
     foreground_text = str(0.0 + lighten_text)
     foreground_edges = str(0.0 + lighten_edges)
-    grid = str(0.0 + lighten_grid)
+    foreground_grid = str(0.0 + lighten_grid)
     background = 'white'
     if dark:
         foreground_text = str(1.0 - lighten_text)
         foreground_edges = str(1.0 - lighten_edges)
-        grid = str(1.0 - lighten_grid)
+        foreground_grid = str(1.0 - lighten_grid)
         background = 'black'
 
     params = {
@@ -354,7 +383,7 @@ def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
         'axes.labelcolor': foreground_text,
         'xtick.color': foreground_text,
         'ytick.color': foreground_text,
-        'grid.color': grid,
+        'grid.color': foreground_grid,
         'legend.edgecolor': foreground_edges,
         'figure.facecolor': background,
         'figure.edgecolor': background,
@@ -582,11 +611,11 @@ def set_axis_color(ax=None, color=None, lighten=0.3, label=True, ticks=True,
 
     alpha = 1.0 - lighten
 
-    if axis == 'x':
+    if axis in ['x', 'X', 'both']:
         ax_axis = ax.xaxis
         ax_ticklines = ax.get_xticklines()
         ax_ticklabels = ax.get_xticklabels()
-    else:
+    if axis in ['y', 'Y', 'both']:
         ax_axis = ax.yaxis
         ax_ticklines = ax.get_yticklines()
         ax_ticklabels = ax.get_yticklabels()
