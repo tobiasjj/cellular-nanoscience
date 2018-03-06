@@ -1,5 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Leafdetection, a tool to automatically detect leafs
+# Copyright 2017 Tobias Jachowski
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """
 Set matplotlib parameters to agree with the Cellular Nanoscience group plotting
 conventions and offer a convenient ContextManager, to plot within a with
@@ -85,7 +100,7 @@ with cnps.cn_plot(context='paper', right_spine=True, dash=True) as cnp:
 # Finally, save the figure (the save command should be within the with
 # statement).
 with cnps.cn_plot(context='paper', dash=True, fig_width=373.44, unit='pt',
-                  aspect_ratio=4/3, right_spine=True, top_spine=True) as cnp:
+                  aspect_ratio=4/3) as cnp:
     fig, ax = plt.subplots()
     ax2 = cnps.second_ax(fig=fig, link_ax=ax)
     # fig.add_subplot(111, frame_on=False)
@@ -112,8 +127,9 @@ with cnps.cn_plot(context='paper', dash=True, fig_width=373.44, unit='pt',
 """
 __author__ = "Tobias Jachowski"
 __copyright__ = "Copyright 2017"
-__credits__ = []
+__credits__ = "Moritz Burmeister"
 __license__ = "Apache-2.0"
+__version__ = "1.0.0"
 __maintainer__ = "Tobias Jachowski"
 __email__ = "cn_plot_style@jachowski.de"
 __status__ = "stable"
@@ -402,7 +418,7 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
                 text_scale=1.0, tick_scale=1.0, cycle=None, usetex=True,
                 right_spine=False, top_spine=False, right_ticks=False,
                 top_ticks=False, autolayout=True, fig_dpi=150, save_dpi=300,
-                transparent_save=True, **kwargs):
+                transparent_save=True, latex_preamble=None, **kwargs):
     """
     ######### Cookbook/Matplotlib/LaTeX Examples ###########
     ##### Producing Graphs for Publication using LaTeX #####
@@ -438,6 +454,10 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
     # Get the theme for the lines (dark/white, light edges/lines)
     params = theme(**kwargs)
 
+    # either set the latex preamble to default or use user chosen packages
+    latex_preamble = (latex_preamble
+                      or r'\usepackage{upgreek},\usepackage[cmbright]{sfmath}')
+
     params.update({
         # Figure size
         'figure.figsize': figsize,
@@ -467,8 +487,7 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
         # Fonts
         'text.usetex': usetex,
         'text.latex.unicode': True,
-        'text.latex.preamble':
-            r'\usepackage{upgreek},\usepackage[cmbright]{sfmath}',
+        'text.latex.preamble': latex_preamble,
         'font.family': 'sans-serif',
         # 'font.sans-serif': ['Helvetica', 'FreeSans'],
         # 'mathtext.fontset': 'custom',
@@ -672,6 +691,5 @@ def second_ax(fig=None, link_ax=None, enable_spines=True, spines_ax=None):
 
     if link_ax:
         link_ax_cycle(link_ax, ax)
-
 
     return ax
