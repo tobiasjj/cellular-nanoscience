@@ -32,9 +32,16 @@ x = np.linspace(0, 50, 2000)
 data = np.sin(x)
 noisy_data = data + np.random.randn(2000) * 5
 
-# Plot data for a 'notebook' with dark background on one axis, and cycle
-# through colors:
-with cnps.cn_plot(context='notebook', dark=True) as cnp:
+
+# Set plotting parameters for a 'notebook' with dark background:
+cnps.set_plot_params(context='notebook', dark=True)
+
+# Reset plotting parameters:
+cnps.reset_plot_params()
+
+# Temporarily set plotting parameters for a 'notebook' with dark background and
+# plot data on one axis, and cycle through colors:
+with cnps.cn_plot(context='notebook', dark=True):
     fig, ax = plt.subplots()
     lns1 = ax.plot(x, noisy_data, label='data')
     lns2 = ax.plot(x, data, label='fit')
@@ -44,11 +51,10 @@ with cnps.cn_plot(context='notebook', dark=True) as cnp:
     ax.set_title('Example fit of a sinus')
     ax.set_xlabel('Time')
     ax.set_ylabel('Amplitude')
-    ax2.set_ylabel('Amplitude')
 
 # Plot data for a paper with 'twocolumn's on one axis, and cycle through colors
 # and dashes:
-with cnps.cn_plot(context='twocolumn', dash=True) as cnp:
+with cnps.cn_plot(context='twocolumn', dash=True):
     fig, ax = plt.subplots()
     lns1 = ax.plot(x, noisy_data, label='data')
     lns2 = ax.plot(x, data, label='fit')
@@ -58,12 +64,11 @@ with cnps.cn_plot(context='twocolumn', dash=True) as cnp:
     ax.set_title('Example fit of a sinus')
     ax.set_xlabel('Time')
     ax.set_ylabel('Amplitude')
-    ax2.set_ylabel('Amplitude')
 
 # Plot data for a paper with a width of 85 mm, on one axis, black and white,
 # and cycle through dashes:
 with cnps.cn_plot(context='paper', fig_width=85, unit='mm', color=False,
-                  color_index=0, dash=True) as cnp:
+                  color_index=0, dash=True):
     fig, ax = plt.subplots()
     lns1 = ax.plot(x, noisy_data, label='data')
     lns2 = ax.plot(x, data, label='fit')
@@ -73,7 +78,6 @@ with cnps.cn_plot(context='paper', fig_width=85, unit='mm', color=False,
     ax.set_title('Example fit of a sinus')
     ax.set_xlabel('Time')
     ax.set_ylabel('Amplitude')
-    ax2.set_ylabel('Amplitude')
 
 # Plot data for a 'paper' on two axes, sharing the x axis, with different y
 ticks, and cycle through colors and dashes:
@@ -160,6 +164,7 @@ _dark_greys = [
 
 _markers = [*'oDshv^<>pP']
 
+
 _dashes = [
         (),                        # line
         (3, 1),                    # dash
@@ -199,23 +204,29 @@ _context_scale = {
     'poster': 2.0
 }
 
+_orig_rcParams = None
+
 
 def linewidth_typearea(papersize=None, font_size=None, DIV=None, BCOR=None):
     """
-    2. Den bekannten Parametern
-        a) a4_width:            DIN A4 Breite 210.0 mm
-        b) DIV, BCOR:           Berechnung des Satzspiegels mittels typearea
+    Calculate the width according to parameters used by typearea in a LaTeX
+    document.
 
-    #DIN A4 Breite -> 210 mm
-    #BCOR Ist die Bindekorrektur, die von der inneren vorhandenen Fläche des
-    # Blattes abgezogen wird
-    #DIV=X Angabe entspricht der Einteilung des Blattes in X gleichgroße Teile
-    #Innerer Rand besteht aus einem Teil, äußerer Rand besteht aus 2 Teilen
-    # (Rand insgesamt 3 Teile)
-    #-> Textbreite ist (210mm - BCOR)/X*(X-3)
-    #DIV=14 -> 161,07mm (BCOR5mm)
-    #DIV=11 -> 149,09mm (BCOR5mm)
-    #25,4mm = 1inch
+    papersize : str
+        Right now, only 'a4' is supported.
+    font_size : str
+        The font size is used to automatically determine `DIV`. Right now,
+        following values are supported: '10pt', '11pt', or '12pt'. Defaults to
+        '10pt'.
+    DIV : int
+        The number of parts the page of a paper is divided into. Defaults to 8.
+    BCOR : float
+        Binding correction in mm.
+
+    Returns
+    -------
+    float
+        The width in mm.
     """
     DIV_font_size = {
         '10pt': 8,
@@ -307,6 +318,8 @@ def fig_size(context='default', fig_width=None, unit='in', aspect_ratio=None,
         Scaling factor of the figure height.
     fig_scale: float
         Overall scaling factor of the figure size.
+    **kwargs : dict
+        Not used.
 
     Returns
     -------
@@ -334,6 +347,9 @@ def fig_size(context='default', fig_width=None, unit='in', aspect_ratio=None,
 
 
 def _colors(dark=False, color=True, color_index=None, **kwargs):
+    """
+    Determine the colors to be used.
+    """
     if color_index is None:
         idx = slice(None)
     else:
@@ -353,6 +369,9 @@ def _colors(dark=False, color=True, color_index=None, **kwargs):
 
 def cyclers(color=True, marker=False, dash=False, colors=None, markers=None,
             dashes=None, dark=False, color_index=None, **kwargs):
+    """
+    Create a cycler object which cycles over colors, markers and dashes.
+    """
     markers = markers or _markers
     dashes = dashes or _dashes
 
@@ -376,6 +395,29 @@ def cyclers(color=True, marker=False, dash=False, colors=None, markers=None,
 
 def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
           lighten_grid=None, **kwargs):
+    """
+    Create plotting parameters for different themes.
+
+    Parameters
+    ----------
+    dark : bool
+        Dark or light theme.
+    lighten : float with range [0.0, 1.0]
+        Lighten lines by fration `lighten`.
+    lighten_edges : float
+        Defaults to `lighten`.
+    lighten_text : float
+        Defaults to `lighten`.
+    lighten_grid : float
+        Defaults to `lighten`.
+    **kwargs : dict
+        Not used.
+
+    Returns
+    -------
+    dict
+        Matplotlib plotting parameters dictionary.
+    """
     if lighten_edges is None:
         lighten_edges = lighten
     if lighten_text is None:
@@ -420,6 +462,9 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
                 top_ticks=False, autolayout=True, fig_dpi=150, save_dpi=300,
                 transparent_save=True, latex_preamble=None, **kwargs):
     """
+    Create plotting parameters with the plotting style of the Cellular
+    Nanoscience group.
+
     ######### Cookbook/Matplotlib/LaTeX Examples ###########
     ##### Producing Graphs for Publication using LaTeX #####
     text_scale gibt die Größenänderung des Textes in Bezug zur normalen Größe
@@ -518,8 +563,8 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
         'ytick.major.pad': 2.8 * pad_scale * context_scale * scale,
 
         # Legend
-        'legend.framealpha': 0.0,
-        'legend.fancybox': False,
+        #'legend.framealpha': 0.0,
+        #'legend.fancybox': False,
         'legend.numpoints': 1,
         'legend.handlelength': 3.0 * context_scale * scale,
 
@@ -540,16 +585,48 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
 
 
 def set_plot_params(*args, **kwargs):
+    """
+    Set matplotlib plotting parameters according to the Cellular Nanoscience
+    plotting style.
+    """
+    global _orig_rcParams
+    if _orig_rcParams is None:
+        _orig_rcParams = plt.rcParams.copy()
+    else:
+        print('Original plotting parameters already stored.')
+        print('Only setting new paramaters.')
     params = plot_params(*args, **kwargs)
     plt.rcParams.update(params)
     return params
 
+def reset_plot_params():
+    """
+    Reset matplotlib plotting parameters.
+    """
+    global _orig_rcParams
+    if _orig_rcParams is None:
+        return
+    plt.rcParams.clear()
+    plt.rcParams.update(_orig_rcParams)
+    _orig_rcParams = None
 
 class cn_plot(object):
+    """
+    A Cellular Nanoscience plotting environemnt.
+
+    `cn_plot` is used within a with statement, wherein it adjusts the
+    matplotlib plotting parameters according to the Cellular Nanoscience style.
+    The plotting parameters outside of the with statement are not affected. On
+    top of adjusting the plotting parameters, `cn_plot` provides functions, to
+    easily access the current value of cycled colors, dashes, and markers.
+    """
     def __init__(self, *args, dark=False, color=True, color_index=None,
                  lighten=0.3, **kwargs):
+        # Store matplotlib plotting parameters to be able to restore them later
         self._rcparams = plt.rcParams.copy()
 
+        # Set default values for color, dashes, and markers and create
+        # corresponding iterators
         self.bw = not color and color_index is None
         self.colors = _colors(dark=dark, color=color, color_index=color_index)
         self.dashes = _dashes.copy()
@@ -559,12 +636,16 @@ class cn_plot(object):
         self.iter_markers = iter(self.markers)
         self.lighten = lighten
 
+        # Write given keyword arguments into general **kwargs dict and get
+        # plotting parameters to be used
         kwargs['dark'] = dark
         kwargs['color'] = color
         kwargs['color_index'] = color_index
         kwargs['lighten'] = lighten
         self.rcdict = plot_params(*args, **kwargs)
 
+        # Update matplotlib plotting parameters, if error occurs, reset to
+        # original plotting parameters
         try:
             plt.rcParams.update(self.rcdict)
         except:
@@ -576,6 +657,7 @@ class cn_plot(object):
         return self
 
     def __exit__(self, type, value, traceback):
+        # Restore original plotting parameters
         plt.rcParams.clear()
         plt.rcParams.update(self._rcparams)
         # Workaround for text rendered with TeX
@@ -665,6 +747,17 @@ def set_axis_color(ax=None, color=None, lighten=0.3, label=True, ticks=True,
 
 
 def legend(*lines, axis=None):
+    """
+    Create legends for given lines. This function also works for lines from
+    different axes (e.g. lines plotted on a second axis, see `second_ax()`).
+
+    Parameters
+    ----------
+    lines : Iterable of matplotlib Lines
+        Lines, which should be included in the legend.
+    axis : Matplotlib Axis
+        The axis where the legend should be created.
+    """
     ax = axis or plt.gca()
     lns = list(itertools.chain(*lines))
     labs = [l.get_label() for l in lns]
@@ -672,10 +765,39 @@ def legend(*lines, axis=None):
 
 
 def link_ax_cycle(ax1, ax2):
+    """
+    Link the property cyclers of two matplotib axes.
+
+    Parameters
+    ----------
+    ax1 : Matplotlib Axis
+        The axis whose lines property cycler is taken to set the one  of `ax2`.
+    ax2 : Matplotlib Axis
+        The axis whose lines property cycler is overwritten by the one from
+        `ax1`.
+    """
     ax2._get_lines.prop_cycler = ax1._get_lines.prop_cycler
 
 
 def second_ax(fig=None, link_ax=None, enable_spines=True, spines_ax=None):
+    """
+    Function to create a second axis.
+
+    Parameters
+    ----------
+    fig : Matplotlib Figure
+        Defaults to `plt.gcf()`.
+    link_ax : Matplotlib Axis
+        An axis the new axis' prop_cycler should be taken from (linked to). New
+        lines plotted on either axis will follow the common order of color,
+        dashes, and markers.
+    enable_spines : bool
+        Enable top and right spines (i.e. top and right border) of axis
+        `spines_ax`.
+    spines_ax : Matplotlib Axis
+        Axis whose top and right spines should be made visible. Defaults to
+        `fig.gca()`. Only evaluated, if `enable_spines` is True.
+    """
     fig = fig or plt.gcf()
 
     if enable_spines:
