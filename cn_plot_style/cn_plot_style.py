@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Leafdetection, a tool to automatically detect leafs
-# Copyright 2017 Tobias Jachowski
+# cn_plot_style, set matplotlib according to the Cellular Nanosciencede group
+# Copyright 2018 Tobias Jachowski
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
