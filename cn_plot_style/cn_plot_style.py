@@ -577,7 +577,7 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
         'savefig.dpi': save_dpi,
 
         # Transparency of background for nbagg backend and for saved figures
-        'nbagg.transparent': False,
+        #'nbagg.transparent': False,
         'savefig.transparent': transparent_save
     })
 
