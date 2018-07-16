@@ -15,6 +15,33 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Examples
+--------
+import os
+import py_fluoracle as pyflu
+
+# read in all datasets in a folder
+path = '.'
+datasets = []
+
+for root, dirs, files in os.walk(path):
+    # Make sure to read only files in a subfolder with name 'data'
+    if 'data' in root:
+        for file in files:
+            if file.endswith('.csv'):
+                filepath = os.path.join(root, file)
+                dataset = pyflu.load_data(filepath)
+                if dataset is not None:
+                    datasets.append(dataset)
+
+# Sort the datasets according to their name
+datasets = pyflu.humansorted_datasets(datasets)
+
+# Get the data of the first dataset
+time = datasets[0]['data'][:,0]
+signal = datasets[0]['data'][:,1]
+"""
 __author__ = "Tobias Jachowski"
 __copyright__ = "Copyright 2018"
 __credits__ = ""
