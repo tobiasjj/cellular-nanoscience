@@ -116,7 +116,7 @@ def load_data(filename):
         data[:, 0] *= 1e-9
     
     # Change label of Xaxis
-    meta['Xaxis'] = replace_label[meta['Xaxis']]
+    meta['Xaxis'] = _replace_label[meta['Xaxis']]
         
     dataset = {
         'filename': filename,
