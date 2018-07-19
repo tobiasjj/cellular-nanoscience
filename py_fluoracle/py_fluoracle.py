@@ -73,7 +73,7 @@ _replace_label = {
 
 def load_data(filename):
     """Read in csv files saved with Fluoracle Software
-    
+
     Parameters
     ----------
     filename : str
@@ -90,14 +90,14 @@ def load_data(filename):
             'meta': dict,
             'data': np.ndarray of type float
         }
-    """    
+    """
     absname = os.path.abspath(filename)
     filename = os.path.basename(absname)
     dirname = os.path.dirname(absname)
 
     # Number of header lines to be used to find the key 'Type'
     header_lines = 2
-    
+
     # read in metadata from the header of the measurement
     meta = {}
     with open(absname, 'r') as f:
@@ -111,10 +111,10 @@ def load_data(filename):
                 key = row[0]
                 value = row[1]
 
-                # Set number of header lines according to type of measurement 
+                # Set number of header lines according to type of measurement
                 if key == 'Type':
                     header_lines = _header_lines_type[value]
-                
+
                 # Make only first character capital
                 if key == 'XAxis' or key == 'YAxis':
                     key = key.capitalize()
@@ -141,10 +141,10 @@ def load_data(filename):
     # Convert ns to s
     if meta['Xaxis'] == 'Time':
         data[:, 0] *= 1e-9
-    
+
     # Change label of Xaxis
     meta['Xaxis'] = _replace_label[meta['Xaxis']]
-        
+
     dataset = {
         'filename': filename,
         'dirname': dirname,
@@ -152,13 +152,13 @@ def load_data(filename):
         'meta': meta,
         'data': data
     }
-    
+
     return dataset
 
 
 def max_fluorescence(data, sigma=0.05):
     """Determine the median of maximum fluorescence for a given sigma
-    
+
     Parameters
     ----------
     data : np.ndarray of type float
@@ -166,7 +166,7 @@ def max_fluorescence(data, sigma=0.05):
     sigma : float
         The interval the median from the maximum should be calculated from
         in fractions of 1.
-        
+
     Returns
     -------
     float
@@ -181,9 +181,9 @@ def max_fluorescence(data, sigma=0.05):
     return F0
 
 
-def decay_region(data, F0=None, dilution=2):
+def decay_region(data, F0=None, delay_sigma=0.95, dilution=2):
     """Autodetect the start and stop indices of a decay region
-    
+
     Parameters
     ----------
     data : np.ndarray of type float
@@ -194,30 +194,32 @@ def decay_region(data, F0=None, dilution=2):
         The ratio the original solution (i.e. maximum signal) is diluted
         (i.e. reduced) upon adding the reactants which lead to the decay
         of the signal.
-    
+
     Returns
     -------
     int, int
         The start and stop index, respectively, of the decay region
     """
-    min_y = 0
-    max_y = 0
     F0 = F0 or max_fluorescence(data)
 
     # Determine the first fluorescence value after the fluorescence has bin diluted
-    start = np.argwhere(np.logical_and(data > F0/dilution * 0.95, data <= F0/dilution)).min()
+    min_start = np.argwhere(data >= F0).max()
+    start = np.argwhere(
+        np.logical_and(data[min_start:] > F0/dilution * delay_sigma,
+                       data[min_start:] <= F0/dilution)
+                      ).min() + min_start
     stop = np.argwhere(data != 0).max() + 1
     return start, stop
 
 
 def humansorted_strings(l):
     """Sort a list of strings like a human
-    
+
     Parameters
     ----------
     l : list
         A list of strings
-    
+
     Returns
     -------
     list
@@ -232,7 +234,7 @@ def humansorted_strings(l):
 
 def humansorted_datasets(l, key=None):
     """Sort a list of datasets according to a key of a dataset
-    
+
     Parameters
     ----------
     l : list
@@ -240,7 +242,7 @@ def humansorted_datasets(l, key=None):
     key : str (optional)
         The key of the dataset the datasets should be sorted according to.
         Defaults to 'name'.
-    
+
     Returns
     -------
     list
@@ -259,7 +261,7 @@ def humansorted_datasets(l, key=None):
 
 def mkdir(directory):
     """Create a directory only if it exists
-    
+
     Parameters
     ----------
     directory : str
