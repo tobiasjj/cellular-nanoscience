@@ -130,7 +130,7 @@ def load_data(filename):
 
             if r >= header_lines:
                 if header_lines <= 2:
-                    print('Type of file {} unknown!'.format(filename))
+                    print('Type of file {} unknown!'.format(absname))
                     return
                 break
 
