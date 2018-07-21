@@ -94,9 +94,11 @@ def load_data(filename):
     absname = os.path.abspath(filename)
     filename = os.path.basename(absname)
     dirname = os.path.dirname(absname)
-
     # Number of header lines to be used to find the key 'Type'
-    header_lines = 2
+    header_lines = 4
+
+    # datacolumns to be read in
+    usecols = [0, 1]
 
     # read in metadata from the header of the measurement
     meta = {}
@@ -109,41 +111,61 @@ def load_data(filename):
             if len(row) >= 2:
                 # Read key and correspodning value
                 key = row[0]
-                value = row[1]
+                values = row[1:-1]
 
                 # Set number of header lines according to type of measurement
                 if key == 'Type':
-                    header_lines = _header_lines_type[value]
+                    header_lines = _header_lines_type[values[0]]
+
+                    # Files with more than one dataset
+                    if len(values) > 1:
+                        # seem to have 2 more lines in the header
+                        header_lines += 2
+                        # and of course more datacolumns to be read in
+                        usecols = range(len(values) + 1)
 
                 # Make only first character capital
                 if key == 'XAxis' or key == 'YAxis':
                     key = key.capitalize()
 
-                # Try to convert value to a float
+                # Try to convert values to float
                 try:
-                    value = float(value)
+                    values = [float(value) for value in values]
                 except:
                     pass
 
+                # Compatibility for old code that relies on single metadata
+                # entries
+                if len(values) == 1:
+                    values = values[0]
+
                 # Store metadata
-                meta[key] = value
+                meta[key] = values
 
             if r >= header_lines:
-                if header_lines <= 2:
+                if header_lines <= 4:
                     print('Type of file {} unknown!'.format(absname))
                     return
                 break
 
+    if 'Xaxis' not in meta.keys():
+        print('Type of file {} unknown!'.format(absname))
+        return
+
     # read in the data
     #data = np.loadtxt(filepath, skiprows=5)
-    data = np.genfromtxt(absname, delimiter=',', skip_header=header_lines, invalid_raise=False, usecols=[0,1])
+    data = np.genfromtxt(absname, delimiter=',', skip_header=header_lines,
+                         invalid_raise=False, usecols=usecols)
 
     # Convert ns to s
-    if meta['Xaxis'] == 'Time':
+    if meta['Xaxis'][0] == 'Time':
         data[:, 0] *= 1e-9
 
     # Change label of Xaxis
-    meta['Xaxis'] = _replace_label[meta['Xaxis']]
+    if isinstance(meta['Xaxis'], str):
+        meta['Xaxis'] = _replace_label[meta['Xaxis']]
+    else:
+        meta['Xaxis'] = [_replace_label[label] for label in meta['Xaxis']]
 
     dataset = {
         'filename': filename,
@@ -154,7 +176,6 @@ def load_data(filename):
     }
 
     return dataset
-
 
 def max_fluorescence(data, sigma=0.05):
     """Determine the median of maximum fluorescence for a given sigma
