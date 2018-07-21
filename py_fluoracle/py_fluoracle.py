@@ -160,14 +160,14 @@ def load_data(filename):
 
     # Change label of Xaxis
     if isinstance(meta['Xaxis'], str):
-        meta['Xaxis'] = _replace_label[meta['Xaxis']]
         if meta['Xaxis'] == 'Time':
             data[:, 0] *= 1e-9
+        meta['Xaxis'] = _replace_label[meta['Xaxis']]
     else:
-        meta['Xaxis'] = [_replace_label[label] for label in meta['Xaxis']]
         # Convert ns to s
         if meta['Xaxis'][0] == 'Time':
             data[:, 0] *= 1e-9
+        meta['Xaxis'] = [_replace_label[label] for label in meta['Xaxis']]
 
     dataset = {
         'filename': filename,
