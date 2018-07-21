@@ -157,15 +157,17 @@ def load_data(filename):
     data = np.genfromtxt(absname, delimiter=',', skip_header=header_lines,
                          invalid_raise=False, usecols=usecols)
 
-    # Convert ns to s
-    if meta['Xaxis'][0] == 'Time':
-        data[:, 0] *= 1e-9
 
     # Change label of Xaxis
     if isinstance(meta['Xaxis'], str):
         meta['Xaxis'] = _replace_label[meta['Xaxis']]
+        if meta['Xaxis'] == 'Time':
+            data[:, 0] *= 1e-9
     else:
         meta['Xaxis'] = [_replace_label[label] for label in meta['Xaxis']]
+        # Convert ns to s
+        if meta['Xaxis'][0] == 'Time':
+            data[:, 0] *= 1e-9
 
     dataset = {
         'filename': filename,
