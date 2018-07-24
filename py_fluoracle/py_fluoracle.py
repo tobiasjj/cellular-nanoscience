@@ -61,7 +61,8 @@ import re
 _header_lines_type = {
     'Kinetic Scan': 9,
     'Emission Scan': 21,
-    'Excitation Scan': 21
+    'Excitation Scan': 21,
+    'Transmission Scan': 21
 }
 
 # Set the replacement of label of the 'Xaxis'
