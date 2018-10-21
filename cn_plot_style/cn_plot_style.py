@@ -457,7 +457,7 @@ def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
 def plot_params(context='default', figsize=None, unit='in', scale=1.0,
                 context_scale=None, data_scale=1.0, edges_scale=1.0,
                 line_scale=1.0, marker_scale=1.0, pad_scale=1.0,
-                text_scale=1.0, tick_scale=1.0, cycle=None, usetex=True,
+                text_scale=1.0, tick_scale=1.0, cycle=None, usetex=False,
                 right_spine=False, top_spine=False, right_ticks=False,
                 top_ticks=False, autolayout=True, fig_dpi=150, save_dpi=300,
                 transparent_save=True, latex_preamble=None, **kwargs):
