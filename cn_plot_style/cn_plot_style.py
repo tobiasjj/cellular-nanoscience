@@ -779,7 +779,8 @@ def link_ax_cycle(ax1, ax2):
     ax2._get_lines.prop_cycler = ax1._get_lines.prop_cycler
 
 
-def second_ax(fig=None, link_ax=None, enable_spines=True, spines_ax=None):
+def second_ax(fig=None, subplot_pos=None, link_ax=None, enable_spines=True,
+              spines_ax=None):
     """
     Function to create a second axis.
 
@@ -787,6 +788,8 @@ def second_ax(fig=None, link_ax=None, enable_spines=True, spines_ax=None):
     ----------
     fig : Matplotlib Figure
         Defaults to `plt.gcf()`.
+    subplot_pos : tuple
+        Defaults to (1, 1, 1).
     link_ax : Matplotlib Axis
         An axis the new axis' prop_cycler should be taken from (linked to). New
         lines plotted on either axis will follow the common order of color,
@@ -799,13 +802,14 @@ def second_ax(fig=None, link_ax=None, enable_spines=True, spines_ax=None):
         `fig.gca()`. Only evaluated, if `enable_spines` is True.
     """
     fig = fig or plt.gcf()
+    subplot_pos = subplot_pos or (1, 1, 1)
 
     if enable_spines:
         spines_ax = spines_ax or fig.gca()
         spines_ax.spines['top'].set_visible(True)
         spines_ax.spines['right'].set_visible(True)
 
-    ax = fig.add_subplot(111, frame_on=False)
+    ax = fig.add_subplot(*subplot_pos, frame_on=False)
     ax.xaxis.set_label_position('top')
     ax.yaxis.set_label_position('right')
     ax.xaxis.tick_top()
