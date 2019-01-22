@@ -531,7 +531,7 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
 
         # Fonts
         'text.usetex': usetex,
-        'text.latex.unicode': True,
+        #'text.latex.unicode': True,
         'text.latex.preamble': latex_preamble,
         'font.family': 'sans-serif',
         # 'font.sans-serif': ['Helvetica', 'FreeSans'],
@@ -662,7 +662,7 @@ class cn_plot(object):
         plt.rcParams.update(self._rcparams)
         # Workaround for text rendered with TeX
         if self.rcdict['text.usetex']:
-            for key in ['text.usetex', 'text.latex.unicode',
+            for key in ['text.usetex', #  'text.latex.unicode',
                         'text.latex.preamble']:
                 plt.rcParams[key] = self.rcdict[key]
 
