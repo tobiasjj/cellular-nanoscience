@@ -661,8 +661,8 @@ class cn_plot(object):
         plt.rcParams.clear()
         rcparams = self._rcparams.copy()
         # workaround to suppress deprecation warning for matplotlib >= 3.0
-        rcparams.pop('examples.directory')
-        rcparams.pop('text.latex.unicode')
+        rcparams.pop('examples.directory', None)
+        rcparams.pop('text.latex.unicode', None)
         plt.rcParams.update(rcparams)
         # Workaround for text rendered with TeX
         if self.rcdict['text.usetex']:
