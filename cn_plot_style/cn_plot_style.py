@@ -544,6 +544,12 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
         'ytick.labelsize': 8 * text_scale * context_scale * scale,
         'legend.fontsize': 8 * text_scale * context_scale * scale,
 
+        # Use TrueType fonts (42) in pdf/ps instead of Type 3 fonts (3)
+        'pdf.fonttype': 42,
+        'ps.fonttype': 42,
+        # Assume fonts are installed on machine where the SVG will be viewed
+        'svg.fonttype': 'none'
+
         # Xticks
         'xtick.top': top_ticks,
         'xtick.major.size': 3.2 * tick_scale * context_scale * scale,
