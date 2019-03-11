@@ -548,7 +548,7 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
         'pdf.fonttype': 42,
         'ps.fonttype': 42,
         # Assume fonts are installed on machine where the SVG will be viewed
-        'svg.fonttype': 'none'
+        'svg.fonttype': 'none',
 
         # Xticks
         'xtick.top': top_ticks,
