@@ -729,11 +729,11 @@ def set_axis_color(ax=None, color=None, lighten=0.3, label=True, ticks=True,
     axes_axis = []
     axes_ticklines = []
     axes_ticklabels = []
-    if axis in ['x', 'X', 'both']:
+    if axis in ['x', 'X', 'xy', 'XY, 'both']:
         axes_axis.append(ax.xaxis)
         axes_ticklines.append(ax.get_xticklines())
         axes_ticklabels.append(ax.get_xticklabels())
-    if axis in ['y', 'Y', 'both']:
+    if axis in ['y', 'Y', 'xy', 'XY', 'both']:
         axes_axis.append(ax.yaxis)
         axes_ticklines.append(ax.get_yticklines())
         axes_ticklabels.append(ax.get_yticklabels())
@@ -794,7 +794,11 @@ def link_ax_cycle(ax1, ax2):
 def second_ax(fig=None, subplot_pos=None, link_ax=None, enable_spines=True,
               spines_ax=None):
     """
-    Function to create a second axis.
+    Function to create a second axes with independent X and Y axis. THe ticks
+    will be placed on top and on the right. If you want to have an axes with
+    shared X or Y axis, use `plt.twinx()`/`plt.twiny()` and then link the axes
+    properties cycler with `cnps.link_ax_cycle(ax1, ax2)`.
+    marker.
 
     Parameters
     ----------
