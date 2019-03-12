@@ -287,7 +287,7 @@ def convert_size(size=1.0, from_unit='pt', to_unit='in'):
     }
     pt_to = {
         'pt': 1,
-        'tpt': 72.27 / 27,
+        'tpt': 72.27 / 72,
         'pc': 1 / 12,
         'mm': 25.4 / 72,
         'in': 1 / 72
