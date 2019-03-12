@@ -246,29 +246,31 @@ def linewidth_typearea(papersize=None, font_size=None, DIV=None, BCOR=None):
     return width_mm
 
 
-def convert_length(length=1.0, from_unit='pt', to_unit='in'):
+def convert_size(size=1.0, from_unit='pt', to_unit='in'):
     """
-    Convert the length in point of an object in a LaTeX document into another
-    unit.
-
-    For different point definitions see:
-    https://tex.stackexchange.com/questions/200934/why-does-a-tex-point-differ-
-    from-a-desktop-publishing-point#200968
+    Convert the size/length of an object into another unit.
 
     Parameters
     ----------
-    length : float
-        Length of an object in a LaTeX document. For instance, the width of
-        text can be determined by using \showthe\linewidth or
-        \showthe\columnwidth. See https://en.wikibooks.org/wiki/LaTeX/Lengths.
+    size : float
+        Size/length of an object. If you would like to set the size of a figure
+        to fit in a text column of a LaTeX document, determine the width in
+        tex points (tpt, see `from_unit`) by using \showthe\linewidth or
+        \showthe\columnwidth (see https://en.wikibooks.org/wiki/LaTeX/Lengths)
+        and convert the width with this function to inch, or directly give the
+        size and the unit as parameters in the function `set_params()` or
+        `cn_plot()`.
     from_unit : str
-        pt, pc, bp, mm, or in
-        A tex point is defined as 1/72.27 inch!
-        pt pica point
-        pc Pica
-        bp big point, rounded point, PostScript point
+        pt: pica/big/rounded/PostScript point, defined as 1/72 of an inch
+        tpt: tex point, defined as 1/72.27 of an inch
+            For different point definitions see:
+            https://tex.stackexchange.com/questions/200934/why-does-a-tex-point
+            -differ-from-a-desktop-publishing-point#200968
+        pc: pica, defined as 1/12 of an inch
+        mm: millimeter, defined as 1/25.4 of an inch
+        in: inch
     to_unit : str
-        pt, pc, bp, mm, or in
+        pt, tpt, pc, mm, or in
 
     Returns
     -------
@@ -277,23 +279,23 @@ def convert_length(length=1.0, from_unit='pt', to_unit='in'):
     """
     # From and to conversion factors
     pt_per = {
-        'pt': 1.0,
-        'pc': 12.0,
-        'bp': 72.27 / 72,
-        'mm': 72.27 / 25.4,
-        'in': 72.27
+        'pt': 1,
+        'tpt': 72 / 72.27,
+        'pc': 12,
+        'mm': 72 / 25.4,
+        'in': 72
     }
     pt_to = {
-        'pt': 1.0,
-        'pc': 1.0 / 12.0,
-        'bp': 72 / 72.27,
-        'mm': 25.4 / 72.27,
-        'in': 1 / 72.27
+        'pt': 1,
+        'tpt': 72.27 / 27,
+        'pc': 1 / 12,
+        'mm': 25.4 / 72,
+        'in': 1 / 72
     }
 
-    length = length * pt_per[from_unit] * pt_to[to_unit]
+    size = size * pt_per[from_unit] * pt_to[to_unit]
 
-    return length
+    return size
 
 
 def fig_size(context='default', fig_width=None, unit='in', aspect_ratio=None,
@@ -332,7 +334,7 @@ def fig_size(context='default', fig_width=None, unit='in', aspect_ratio=None,
         fig_width = _context_width.get(context, default)
     else:
         # Set and convert unit of fig_width to inch
-        fig_width = convert_length(length=fig_width, from_unit=unit)
+        fig_width = convert_size(size=fig_width, from_unit=unit)
 
     # Get the aspect ratio
     default = _context_aspect['default']
@@ -485,8 +487,8 @@ def plot_params(context='default', figsize=None, unit='in', scale=1.0,
                            **kwargs)
     else:
         # Convert units of figsize to inch
-        width = convert_length(length=figsize[0], from_unit=unit)
-        height = convert_length(length=figsize[1], from_unit=unit)
+        width = convert_size(size=figsize[0], from_unit=unit)
+        height = convert_size(size=figsize[1], from_unit=unit)
         figsize = (width, height)
 
     # Determine overall scaling according to context
