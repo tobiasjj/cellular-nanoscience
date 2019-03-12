@@ -729,7 +729,7 @@ def set_axis_color(ax=None, color=None, lighten=0.3, label=True, ticks=True,
     axes_axis = []
     axes_ticklines = []
     axes_ticklabels = []
-    if axis in ['x', 'X', 'xy', 'XY, 'both']:
+    if axis in ['x', 'X', 'xy', 'XY', 'both']:
         axes_axis.append(ax.xaxis)
         axes_ticklines.append(ax.get_xticklines())
         axes_ticklabels.append(ax.get_xticklabels())
