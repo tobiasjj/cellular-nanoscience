@@ -605,7 +605,6 @@ def set_plot_params(*args, **kwargs):
         print('Original plotting parameters already stored.')
         print('Only setting new paramaters.')
     params = plot_params(*args, **kwargs)
-    params = deprecation_workaround(params)
     plt.rcParams.update(params)
     return params
 
@@ -617,7 +616,8 @@ def reset_plot_params():
     if _orig_rcParams is None:
         return
     plt.rcParams.clear()
-    plt.rcParams.update(_orig_rcParams)
+    params = deprecation_workaround(_orig_rcParams)
+    plt.rcParams.update(params)
     _orig_rcParams = None
 
 class cn_plot(object):
@@ -719,6 +719,7 @@ class cn_plot(object):
 
 
 def deprecation_workaround(rcparams):
+        rcparams = rcparams.copy()
         # workaround to suppress deprecation warning for matplotlib >= 3.0
         rcparams.pop('examples.directory', None)
         rcparams.pop('text.latex.unicode', None)
