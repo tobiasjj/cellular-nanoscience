@@ -406,6 +406,7 @@ def theme(dark=False, lighten=0.3, lighten_edges=None, lighten_text=None,
         Dark or light theme.
     lighten : float with range [0.0, 1.0]
         Lighten lines by fration `lighten`.
+        See https://www.darkhorseanalytics.com/blog/data-looks-better-naked/
     lighten_edges : float
         Defaults to `lighten`.
     lighten_text : float
@@ -671,6 +672,9 @@ class cn_plot(object):
         # workaround to suppress deprecation warning for matplotlib >= 3.0
         rcparams.pop('examples.directory', None)
         rcparams.pop('text.latex.unicode', None)
+        # workaround to suppress deprecation warning for matplotlib >= 3.1
+        rcparams.pop('verbose.fileo', None)
+        rcparams.pop('verbose.level', None)
         plt.rcParams.update(rcparams)
         # Workaround for text rendered with TeX
         if self.rcdict['text.usetex']:
