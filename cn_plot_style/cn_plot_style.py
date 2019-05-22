@@ -673,6 +673,7 @@ class cn_plot(object):
         rcparams.pop('examples.directory', None)
         rcparams.pop('text.latex.unicode', None)
         # workaround to suppress deprecation warning for matplotlib >= 3.1
+        rcparams.pop('savefig.frameon', None)
         rcparams.pop('verbose.fileo', None)
         rcparams.pop('verbose.level', None)
         plt.rcParams.update(rcparams)
