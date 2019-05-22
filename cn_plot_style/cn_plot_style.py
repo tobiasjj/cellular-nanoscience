@@ -605,6 +605,7 @@ def set_plot_params(*args, **kwargs):
         print('Original plotting parameters already stored.')
         print('Only setting new paramaters.')
     params = plot_params(*args, **kwargs)
+    params = deprecation_workaround(params)
     plt.rcParams.update(params)
     return params
 
@@ -669,13 +670,7 @@ class cn_plot(object):
         # Restore original plotting parameters
         plt.rcParams.clear()
         rcparams = self._rcparams.copy()
-        # workaround to suppress deprecation warning for matplotlib >= 3.0
-        rcparams.pop('examples.directory', None)
-        rcparams.pop('text.latex.unicode', None)
-        # workaround to suppress deprecation warning for matplotlib >= 3.1
-        rcparams.pop('savefig.frameon', None)
-        rcparams.pop('verbose.fileo', None)
-        rcparams.pop('verbose.level', None)
+        rcparams = deprecation_workaround(rcparams)
         plt.rcParams.update(rcparams)
         # Workaround for text rendered with TeX
         if self.rcdict['text.usetex']:
@@ -721,6 +716,17 @@ class cn_plot(object):
             self.iter_markers = iter(self.markers)
             marker = next(self.iter_markers)
         return marker
+
+
+def deprecation_workaround(rcparams):
+        # workaround to suppress deprecation warning for matplotlib >= 3.0
+        rcparams.pop('examples.directory', None)
+        rcparams.pop('text.latex.unicode', None)
+        # workaround to suppress deprecation warning for matplotlib >= 3.1
+        rcparams.pop('savefig.frameon', None)
+        rcparams.pop('verbose.fileo', None)
+        rcparams.pop('verbose.level', None)
+        return rcparams
 
 
 def set_axis_color(ax=None, color=None, lighten=0.3, label=True, ticks=True,
