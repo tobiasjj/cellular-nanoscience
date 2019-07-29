@@ -1,4 +1,0 @@
-[submodule "stepfinder"]
-	path = stepfinder
-	url = https://github.com/tobiasjj/stepfinder
-	branch = master
