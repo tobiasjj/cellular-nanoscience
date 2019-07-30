@@ -252,11 +252,13 @@ def plot_force_extension(x, y, ystd=None, yerr=None, ax=None, show=False):
         ax.set_title('Force Extension')
 
     # plot force extension lines and errorbars
-    ax.plot(x, y, alpha=0.99)
+    ax.plot(x * 1e9, y * 1e12)
     if ystd is not None:
-        ax.errorbar(x, y, fmt='none', yerr=ystd, ecolor='grey', alpha=0.25)
+        ax.errorbar(x * 1e9, y * 1e12, fmt='none', yerr=ystd * 1e12,
+                    ecolor='grey', alpha=0.25)
     if yerr is not None:
-        ax.errorbar(x, y, fmt='none', yerr=yerr, ecolor='black', alpha=0.25)
+        ax.errorbar(x * 1e9, y * 1e12, fmt='none', yerr=yerr * 1e12,
+                    ecolor='black', alpha=0.25)
 
     if show:
         ax.get_figure().show()
@@ -287,10 +289,10 @@ def plot_angle_extension(x, theta_phi, axes=None, show=False):
         ax, ax2 = axes
 
     # 0: theta_extension, 1: phi_exension, 2: theta_force, 3: phi_force
-    lns1 = ax.plot(x, theta_phi[:, 0], label=r'$\theta$ E')
-    lns2 = ax.plot(x, theta_phi[:, 2], label=r'$\theta$ F')
-    lns3 = ax2.plot(x, theta_phi[:, 1], label=r'$\phi$ E')
-    lns4 = ax2.plot(x, theta_phi[:, 3], label=r'$\phi$ F')
+    lns1 = ax.plot(x * 1e9, theta_phi[:, 0], label=r'$\theta$ E')
+    lns2 = ax.plot(x * 1e9, theta_phi[:, 2], label=r'$\theta$ F')
+    lns3 = ax2.plot(x * 1e9, theta_phi[:, 1], label=r'$\phi$ E')
+    lns4 = ax2.plot(x * 1e9, theta_phi[:, 3], label=r'$\phi$ F')
 
     lns = list(itertools.chain(lns1, lns2, lns3, lns4))
     labs = [l.get_label() for l in lns]
@@ -417,7 +419,7 @@ def show_force_extension(tether, i=0, bins=0, resolution=0, sortcolumn=0,
     # Build user interface (ui)
     index = BoundedIntText(value=i, min=0, max=stop - 1, description='FE_pair:')
     bins = IntText(value=bins, description='Bins')
-    resolution = FloatText(value=resolution, step=0.1,
+    resolution = FloatText(value=resolution, step=1,
                            description='Resolution')
     sortcolumn = BoundedIntText(value=sortcolumn, min=0, max=2,
                                 description='Sortcolumn')
@@ -492,13 +494,13 @@ def autolimits(tether, samples=None, e=None, f=None, xlim=None, ylim=None):
             samples = slice(start, stop)
 
         if xlim is None and ylim is None and e is None and f is None:
-                e_f = tether.force_extension(samples=samples) * 1000  # nm, pN
+                e_f = tether.force_extension(samples=samples)  # m, N
                 e = e_f[:, 0]
                 f = e_f[:, 1]
         if xlim is None and e is None:
-            e = tether.extension(samples=samples) * 1000  # nm
+            e = tether.extension(samples=samples) # m
         if ylim is None and f is None:
-            f = tether.force(samples=samples) * 1000  # pN
+            f = tether.force(samples=samples) # N
 
         if xlim is None:
             e_min = e.min()
@@ -513,7 +515,7 @@ def autolimits(tether, samples=None, e=None, f=None, xlim=None, ylim=None):
             ylim = (f_min - f_diff, f_max + f_diff)
 
         # Return the set limits
-        return xlim, ylim
+        return xlim * 1e9, ylim * 1e12
 
 
 def save_figures(figures, directory=None, file_prefix=None, file_suffix=None,
