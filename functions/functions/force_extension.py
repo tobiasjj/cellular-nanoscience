@@ -506,16 +506,16 @@ def autolimits(tether, samples=None, e=None, f=None, xlim=None, ylim=None):
             e_min = e.min()
             e_max = e.max()
             e_diff = (e_max - e_min) * 0.02
-            xlim = (e_min - e_diff, e_max + e_diff)
+            xlim = ((e_min - e_diff) * 1e9, (e_max + e_diff) * 1e9)
 
         if ylim is None:
             f_min = f.min()
             f_max = f.max()
             f_diff = (f_max - f_min) * 0.02
-            ylim = (f_min - f_diff, f_max + f_diff)
+            ylim = ((f_min - f_diff) * 1e12, (f_max + f_diff) * 1e12)
 
         # Return the set limits
-        return xlim * 1e9, ylim * 1e12
+        return xlim, ylim
 
 
 def save_figures(figures, directory=None, file_prefix=None, file_suffix=None,
