@@ -172,6 +172,15 @@ def fbnl_force_extension(tether, i, filter_time=0.005, edginess=1,
         7,8,9: distanceXYZ, 10,11,12: forceXYZ
     angles_after_filter : bool
         13,14,15,16: theta (13,15) and phi (14,16) for extension and force
+
+    Returns
+    -------
+    filtered_data, fbnl_filters
+        filtered_data is a list of two np.ndarrays (0: stress, 1: release)
+        each array has the filtered data with the columns 0: time, 1: extension
+        2: force, and extra traces/angles
+        fbnl_filters is a list of two lists (0: stress, 1: release) containing
+        the individual FBNL_Filter_results of the filtered data
     """
     fe_pair = tether.force_extension_pair(i=i, time=True)
     (x_stress, y_stress, info_stress,
@@ -214,7 +223,7 @@ def fbnl_force_extension(tether, i, filter_time=0.005, edginess=1,
     window = window_var = max(int(np.round(filter_time * resolution)), 1)
     cap_data = True
 
-    fbnl_filters = [[None]]*2
+    fbnl_filters = [[],[]]
     for i in range(2):  # 0=stress, 1=release
         for c in range(1, data[i].shape[1]):  # 1: extension, 2: force, 3: ...
             d = data[i][:, c]
