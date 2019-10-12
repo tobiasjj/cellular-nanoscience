@@ -95,7 +95,7 @@ def binned_force_extension(tether, i, bins=None, resolution=None, sortcolumn=0,
      x_release, y_release, info_release,
      t_stress, t_release) = fe_pair
 
-    data = [None]*2
+    data = [None]*2  # 0: stress, 1: release
     data[0] = np.c_[t_stress, x_stress, y_stress]
     data[1] = np.c_[t_release, x_release, y_release]
 
@@ -162,10 +162,8 @@ def fbnl_force_extension(tether, i, filter_time=0.005, edginess=1,
     """
     Parameters
     ----------
-    bins : int or str
-        number of bins, takes precedence over resolution
-    resolution : float
-        number of bins per unit of sortcolumn
+    filter_time : float
+        time of running filter in s
     sortcolumn : int
         0: time, 1: extension, 2: force, n >= 3: angles and/or extra_columns
     angles : bool
@@ -377,7 +375,8 @@ def show_force_extension(tether, i=0, bins=0, resolution=0, sortcolumn=0,
                          autoscale=False, xlim=None, ylim=None, **kwargs):
     """
     Plot the force extension data with index `i` (see method
-    `self.force_extension_pairs()`) on self.fe_figure.
+    `tether.force_extension_pairs()`) on tether.fe_figure.
+
     Parameters
     ----------
     i : int
