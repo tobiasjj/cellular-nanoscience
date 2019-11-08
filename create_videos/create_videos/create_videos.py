@@ -19,7 +19,6 @@
 import imageio
 import numpy as np
 import os
-import pathlib
 import pims
 import re
 import tifffile
@@ -29,6 +28,7 @@ from IPython.display import display
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib import patches
 from matplotlib import pyplot as plt
+from PIL import Image, ImageDraw, ImageFont
 
 
 def check_set(para, default, decider=None):
@@ -227,6 +227,47 @@ def calculate_background(filenames, defect_roi=None, replace_mode='v'):
     # normalize the median to the minimum
     minimum = median.min()
     return median - minimum
+
+
+def bin_image(image, bin_by=None, f=None):
+    """
+    image : np.ndarray 2D
+    bin_by : iterable 2D
+    f : function
+        function to apply to each 2D bin. Defaults to `np.mean`.
+    """
+    if bin_by is None:
+        return image
+    f = np.mean if f is None else f
+    shape = np.asarray(image.shape)
+    bin_by = np.asarray(bin_by[::-1])
+    shape_new = shape // bin_by
+    factor = (np.asarray(shape) // shape_new)
+
+    image_binned = f(f(
+                     image.reshape(shape_new[0], factor[0],
+                                   shape_new[1], factor[1]),
+                   1), 2)
+
+    return image_binned.astype(image.dtype)
+
+
+def annotate(image, pos, size, text, font=None):
+    # Get max color of image
+    dtype, info = dtype_info(array=image)
+    fill = int(255 / info.max * image.max())
+
+    font = check_set(font, 'FreeSans')
+    font = ImageFont.truetype(font, size=size)
+
+    # Convert array to Image
+    image = Image.fromarray(image)
+
+    # Draw the text
+    draw = ImageDraw.Draw(image)
+    draw.text(pos, text, fill=fill, font=font)
+
+    return np.array(image)
 
 
 class adjust_roi(object):
@@ -432,7 +473,7 @@ class adjust_roi_contrast(object):
             length_x = 1
             length_y = 1
 
-        # Get default minmax grey values
+        # Get default minmax grey levels
         if dtype is not None or self.image is not None:
             dtype, info = dtype_info(array=self.image, dtype=dtype)
             min_grey = info.min
@@ -482,8 +523,8 @@ class adjust_roi_contrast(object):
         self.length_x_interact = interactive(_set_roi, value=self._length_x)
         self.length_y_interact = interactive(_set_roi, value=self._length_y)
 
-        # Create widgets for storing and setting the histogram min/max grey values and
-        # callback function to trigger the update of histogram
+        # Create widgets for storing and setting the histogram min/max grey
+        # levels and callback function to trigger the update of histogram
         self._min_grey = BoundedIntText(value=min_grey,
                                         min=min_grey, max=max_grey,
                                         step=1, description='min_grey:')
@@ -594,7 +635,7 @@ class adjust_roi_contrast(object):
         self.spanselector = SpanSelector(self.axes[2], self.set_minmax_grey,
                                          'horizontal', useblit=True)
 
-        # Update the axvspan with the current min_grey/max_grey values
+        # Update the axvspan with the current min_grey/max_grey levels
         if self.min_grey != self._min_grey.min or self.max_grey != self._max_grey.max:
             self.axspan = self.axes[2].axvspan(self.min_grey, self.max_grey,
                                                facecolor='y', alpha=0.2)
@@ -665,7 +706,7 @@ class adjust_roi_contrast(object):
 
     def set_minmax_grey(self, min_grey, max_grey, update_widgets=True):
         """
-        Set the grey min max values and update the figure accordingly.
+        Set the grey min max levels and update the figure accordingly.
         This function is called upon any change of the SpanSelector.
 
         Parameters
@@ -871,19 +912,22 @@ def get_crop_image_roi(width, height, center_x=None, center_y=None, length_x=Non
         stop = start + new_length
         return start, stop
 
-    start_x, stop_x = get_start_stop(width, center_x, length_x, multiple_of)
-    start_y, stop_y = get_start_stop(height, center_y, length_y, multiple_of)
+    multiple_of = np.asarray(multiple_of).flatten().tolist()
+    if len(multiple_of) == 1:
+        multiple_of.append(multiple_of[0])
+    start_x, stop_x = get_start_stop(width, center_x, length_x, multiple_of[0])
+    start_y, stop_y = get_start_stop(height, center_y, length_y, multiple_of[1])
 
     return (start_x, stop_x, start_y, stop_y)
 
 
-def scalebar(image, resolution=1.0, width=1.0, height=None, pos_x_rel=0.98, pos_y_rel=None, value=None):
+def scalebar(image, resolution=None, width=1.0, height=None, pos_x_rel=0.98, pos_y_rel=None, value=None):
     """
     Draw a scalebar on top of an image
 
     Parameters
     ----------
-    resolution : float
+    resolution : float or list of floats
         The resolution of the image in unit/px
     width : float
         The width of the scalebar in units
@@ -898,9 +942,13 @@ def scalebar(image, resolution=1.0, width=1.0, height=None, pos_x_rel=0.98, pos_
         maximal allowed value of the `image` arra. Depending on the lookup
         table this translates usually to white or black.
     """
-    width_px = int(np.round(width / resolution))
+    resolution = check_set(resolution, 1.0)
+    resolution = np.asarray(resolution).flatten().tolist()
+    if len(resolution) == 1:
+        resolution.append(resolution[0])
+    width_px = int(np.round(width / resolution[0]))
     height = check_set(height, 0.15 * width)
-    height_px = int(np.round(height / resolution))
+    height_px = int(np.round(height / resolution[1]))
 
     image_height, image_width = image.shape
     pos_x = int(np.round(pos_x_rel * image_width))
@@ -928,7 +976,7 @@ def get_fps(filenames, fps=None):
         calculates the median of all creation time differences between all files
         and uses the reciprocal as fps. 'total' uses the difference of the creation
         time of the last and the first file and divides it by the total number of
-        images. Defaults to 'predominant'.
+        images. 'no_fps' returns `None`. Defaults to 'predominant'.
     """
     def fps_explicit():
         return fps
@@ -947,44 +995,87 @@ def get_fps(filenames, fps=None):
     fps_options = {
         None: fps_predominant,
         'predominant': fps_predominant,
-        'total': fps_total
+        'total': fps_total,
+        'no_fps': None
     }
 
     # Determine fps ('predominant' or 'total') or set directly ('fps_explicit')
     return fps_options.get(fps, fps_explicit)()
 
 
-def _create_video(filenames, savename, fps=None, quality=None,
-                  background_image=None, min_grey=None, max_grey=None,
+def _create_video(filenames, savename,
+                  background_image=None, bin_by=None, min_grey=None, max_grey=None,
                   width_grey=None, offset_grey=None,
                   center_x=None, center_y=None, length_x=None, length_y=None,
-                  resolution=1, scalebar_width=None, scalebar_height=None):
-    if savename.endswith('.tif'):
-        writer = imageio.get_writer(savename)
-    else:
-        # pixelformat='gray16le'
-        writer = imageio.get_writer(savename, fps=fps, quality=quality)
+                  resolution=1, scalebar_width=None, scalebar_height=None,
+                  annotations=None, **kwargs):
+    image_width, image_height = get_image_shape(filenames[0])
+    center_x = check_set(center_x, (image_width - 1) / 2)
+    center_y = check_set(center_y, (image_height - 1) / 2)
+    length_x = check_set(length_x, image_width)
+    length_y = check_set(length_y, image_height)
+    bin_by = check_set(bin_by, 1)
+    bin_by = np.asarray(bin_by).flatten().tolist()
+    if len(bin_by) == 1:
+        bin_by.append(bin_by[0])
 
-    if center_x is None and center_y is None and length_x is None and length_y is None:
-        roi = (None, None, None, None)
-    else:
-        image_width, image_height = get_image_shape(filenames[0])
-        roi = get_crop_image_roi(image_width, image_height, center_x, center_y, length_x, length_y,
-                                 multiple_of=16)
+    # Calculate the binned dimensions needed for the 16 pixels of the mp4 codec
+    multiple_of = [16]*2
+    for i, bb in enumerate(bin_by):
+        multiple_of[i] = multiple_of[i] * bb
+    # Get the crop region of the image
+    roi = get_crop_image_roi(image_width, image_height, center_x, center_y, length_x, length_y,
+                             multiple_of=multiple_of)
     idx_x = slice(roi[0], roi[1])  # columns
     idx_y = slice(roi[2], roi[3])  # rows
 
+    # Load and crop the background image
     if background_image is None:
         background = 0
     else:
         background = pims.open(background_image)[0][idx_y, idx_x]
 
-    for filename in filenames:
+    # Calculate the binned resolution in x and y
+    resolution = check_set(resolution, 1.0)
+    resolution = np.asarray(resolution).flatten().tolist()
+    if len(resolution) == 1:
+        resolution.append(resolution[0])
+    for i, bb in enumerate(bin_by):
+        resolution[i] = resolution[i] * bb
+
+    annotations = check_set(annotations, [])
+    # Calculate changes due to binning factor and protect original annotations
+    # list
+    _annotations = []
+    for annotation in annotations:
+        idcs = annotation[0]
+        pos = np.asarray(annotation[1]).flatten().tolist()
+        pos[0] = pos[0] // bin_by[0]
+        pos[1] = pos[1] // bin_by[1]
+        size = annotation[2] // bin_by[0]
+        text = annotation[3]
+        _annotations.append([idcs, pos, size, text])
+    annotations = _annotations
+
+    # pixelformat='gray16le'
+    writer = imageio.get_writer(savename, **kwargs)
+
+    for i, filename in enumerate(filenames):
+        # Read, crop and subtract background from image
         im = pims.open(filename)[0][idx_y, idx_x] - background
+        # Bin the image
+        im = bin_image(im, bin_by=bin_by, f=np.mean)
+        # Adjust the grey levels
         min_grey, max_grey = get_minmax_grey(im, min_grey, max_grey, width_grey, offset_grey)
         im = convert_image(im, 'uint8', min_grey, max_grey)
         if scalebar_width is not None:
             scalebar(im, resolution, width=scalebar_width, height=scalebar_height)
+        for annotation in annotations:
+            if i in annotation[0]:
+                pos = np.asarray(annotation[1])
+                size = annotation[2]
+                text = annotation[3]
+                im = annotate(im, pos, size, text)
         writer.append_data(im)
 
     writer.close()
@@ -992,12 +1083,13 @@ def _create_video(filenames, savename, fps=None, quality=None,
 
 def create_video(directory, prefix=None, suffix=None, extension=None, sort_key=None,
                  start_image_i=None, stop_image_i=None, split_time=None, split_regexp=None,
-                 fps=None, fps_speedup=1, decimate=1, quality=None,
-                 background_image=None, min_grey=None, max_grey=None,
+                 fps=None, fps_speedup=1, decimate=1,
+                 background_image=None, bin_by=None, min_grey=None, max_grey=None,
                  width_grey=None, offset_grey=None,
                  center_x=None, center_y=None, length_x=None, length_y=None,
                  resolution=1, scalebar_width=None, scalebar_height=None,
-                 videoname=None, videosuffix='.mp4', videodirectory=None):
+                 annotations=None,
+                 videoname=None, videosuffix='.mp4', videodirectory=None, **kwargs):
     """
     Parameters
     ----------
@@ -1026,21 +1118,24 @@ def create_video(directory, prefix=None, suffix=None, extension=None, sort_key=N
             else:
                 _videoname = ''.join((videoname, '_{:02d}'.format(i+1), videosuffix))
             savename = os.path.join(videodirectory, _videoname)
-            fps_source = get_fps(filenames, fps=fps)
-            fps_target = fps_source * fps_speedup / decimate
 
             print('Creating Video \'{}\' of {} files ...'.format(savename, len(_filenames)))
             print('  Frame slice {}:{}'.format(start, stop))
-            print('  Frames per second source: {:.2f}'.format(fps_source))
-            print('  Frames per second target: {:.2f}'.format(fps_target))
+            fps_source = get_fps(filenames, fps=fps)
+            if fps_source is not None:
+                fps_target = fps_source * fps_speedup / decimate
+                kwargs['fps'] = fps_target
+                print('  Frames per second source: {:.2f}'.format(fps_source))
+                print('  Frames per second target: {:.2f}'.format(fps_target))
 
-            _create_video(_filenames, savename, fps=fps_target, quality=quality,
-                          background_image=background_image,
+            _create_video(_filenames, savename,
+                          background_image=background_image, bin_by=bin_by,
                           min_grey=min_grey, max_grey=max_grey, width_grey=width_grey, offset_grey=offset_grey,
                           center_x=center_x, center_y=center_y,
                           length_x=length_x, length_y=length_y,
                           resolution=resolution, scalebar_width=scalebar_width,
-                          scalebar_height=scalebar_height)
+                          scalebar_height=scalebar_height,
+                          annotations=annotations, **kwargs)
             print('  ... done.')
 
 
