@@ -23,7 +23,8 @@ import pims
 import re
 import tifffile
 
-from ipywidgets import HBox, VBox, BoundedFloatText, BoundedIntText, interactive, IntRangeSlider, IntSlider, Text
+from ipywidgets import (HBox, VBox, BoundedFloatText, BoundedIntText,
+                        interactive, IntRangeSlider, IntSlider, Text)
 from IPython.display import display
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib import patches
@@ -38,7 +39,7 @@ def check_set(para, default, decider=None):
     return para
 
 
-def filenames(directory):
+def get_filenames(directory):
     for name in os.listdir(directory):
         if os.path.isfile(os.path.join(directory, name)):
             yield name
@@ -50,7 +51,7 @@ def filterby(names, prefix=None, suffix=None, extension=None):
     extension = check_set(extension, '')
     for name in names:
         if (name.startswith(prefix)
-            and name.endswith(''.join((suffix, extension)))):
+                and name.endswith(''.join((suffix, extension)))):
             yield name
 
 
@@ -91,7 +92,7 @@ def files(directory, prefix=None, suffix=None, extension=None, sort_key=None):
     sort_key : function
         Function to be applied to every filename found, before sorting.
     """
-    names = filenames(directory)
+    names = get_filenames(directory)
     names_filtered = filterby(names, prefix=prefix, suffix=suffix,
                               extension=extension)
     fullnames = [file_and_dir(filename=name, directory=directory)[2]
@@ -109,12 +110,13 @@ def split_filenames(fullnames, split_time=None, regexp=None):
         else:
             try:
                 # Extract time difference from filename
-                # The tdiff in each filename represents the time passed since the
-                # previous image was taken
+                # The tdiff in each filename represents the time passed since
+                # the previous image was taken
                 # example name: 'B14-029ms-8902.tif'
                 # example regexp: '-([0-9]*)ms-'
-                tdiffs = np.array([int(re.findall(regexp, os.path.basename(filename))[0])
-                                   for filename in fullnames])[1:] / 1000
+                tdiffs = np.array(
+                    [int(re.findall(regexp, os.path.basename(filename))[0])
+                     for filename in fullnames])[1:] / 1000
             except:
                 tdiffs = np.zeros(len(fullnames) - 1)
         idx = np.r_[0, np.where(tdiffs >= split_time)[0] + 1, len(fullnames)]
@@ -151,7 +153,9 @@ def lookup_table(dtype, minimum=None, maximum=None, dtype_to=None):
     # Create a lookup table
     lut = np.zeros(2**info.bits, dtype=dtype_to)
     lut[:minimum] = info_to.min
-    lut[minimum:maximum + 1] = np.linspace(info_to.min, info_to.max, maximum - minimum + 1, dtype=dtype_to)
+    lut[minimum:maximum + 1] = np.linspace(info_to.min, info_to.max,
+                                           maximum - minimum + 1,
+                                           dtype=dtype_to)
     lut[maximum:] = info_to.max
 
     return lut
@@ -169,12 +173,14 @@ def convert_image(image, dtype_to, minimum, maximum):
     return np.take(lut, image)
 
 
-def get_minmax_grey(image, minimum=None, maximum=None, width=None, offset=None):
+def get_minmax_grey(image, minimum=None, maximum=None, width=None,
+                    offset=None):
     if width is None:
         minimum = check_set(minimum, image.min())
         maximum = check_set(maximum, image.max())
     else:
-        # adjust histogramm according to given width, centered around the median
+        # adjust histogramm according to given width, centered around the
+        # median
         #hist, values = np.histogram(image, bins=2**16-1)
         #middle = hist.argmax()
         median = np.median(image)
@@ -186,7 +192,8 @@ def get_minmax_grey(image, minimum=None, maximum=None, width=None, offset=None):
     return minimum, maximum
 
 
-def convert_uint16_uint8(image, minimum=None, maximum=None, width=None, offset=None):
+def convert_uint16_uint8(image, minimum=None, maximum=None, width=None,
+                         offset=None):
     minimum, maximum = get_minmax_grey(image, minimum, maximum, width, offset)
     return convert_image(image, 'uint8', minimum, maximum)
 
@@ -204,50 +211,55 @@ def calculate_background(filenames, defect_roi=None, replace_mode='v'):
     tiffstack = tifffile.imread(filenames)
     median = np.median(tiffstack, axis=0).astype('uint16')
 
-    # Replace defect regions - e.g. from the trapping of beads - with neighbouring pixels
+    # Replace defect regions - e.g. from the trapping of beads - with
+    # neighbouring pixels
     if defect_roi is not None:
         height, width = median.shape
-        start_x, stop_x, start_y, stop_y = get_crop_image_roi(width, height, *defect_roi)
+        start_x, stop_x, start_y, stop_y = get_crop_image_roi(width, height,
+                                                              *defect_roi)
 
         if replace_mode == 'v':  # vertical replacement
             # length_y pixel
             px = int(np.ceil(defect_roi[3] / 2))
             # replace bottom half
-            median[start_y:stop_y-px, start_x:stop_x] = median[start_y-px:start_y, start_x:stop_x]
+            median[start_y:stop_y-px, start_x:stop_x] = \
+                median[start_y-px:start_y, start_x:stop_x]
             # replace top half
-            median[start_y+px:stop_y, start_x:stop_x] = median[stop_y:stop_y+px, start_x:stop_x]
+            median[start_y+px:stop_y, start_x:stop_x] = \
+                median[stop_y:stop_y+px, start_x:stop_x]
         else:  # horizontal replacement
             # length_x pixel
             px = int(np.ceil(defect_roi[2] / 2))
             # replace left half
-            median[start_y:stop_y, start_x:stop_x - px] = median[start_y:stop_y, start_x - px:start_x]
+            median[start_y:stop_y, start_x:stop_x - px] = \
+                median[start_y:stop_y, start_x - px:start_x]
             # replace right half
-            median[start_y:stop_y, start_x + px:stop_x] = median[start_y:stop_y, stop_x:stop_x + px]
+            median[start_y:stop_y, start_x + px:stop_x] = \
+                median[start_y:stop_y, stop_x:stop_x + px]
 
     # normalize the median to the minimum
     minimum = median.min()
     return median - minimum
 
 
-def bin_image(image, bin_by=None, f=None):
+def bin_image(image, bin_by=None, func=None):
     """
     image : np.ndarray 2D
     bin_by : iterable 2D
-    f : function
-        function to apply to each 2D bin. Defaults to `np.mean`.
+    func : function
+           function to apply to each 2D bin. Defaults to `np.mean`.
     """
     if bin_by is None:
         return image
-    f = np.mean if f is None else f
+    func = check_set(func, np.mean)
     shape = np.asarray(image.shape)
     bin_by = np.asarray(bin_by[::-1])
     shape_new = shape // bin_by
     factor = (np.asarray(shape) // shape_new)
 
-    image_binned = f(f(
-                     image.reshape(shape_new[0], factor[0],
-                                   shape_new[1], factor[1]),
-                   1), 2)
+    image_binned = func(func(
+        image.reshape(shape_new[0], factor[0],
+                      shape_new[1], factor[1]), 1), 2)
 
     return image_binned.astype(image.dtype)
 
@@ -308,12 +320,15 @@ class adjust_roi(object):
         if image is not None:
             self.axes[0].clear()
             self.axes[0].imshow(image, cmap=plt.cm.gray)
-            self.rectangleselector = RectangleSelector(self.axes[0], self.set_roi,
-                                                       useblit=True, interactive=False)
+            self.rectangleselector = RectangleSelector(self.axes[0],
+                                                       self.set_roi,
+                                                       useblit=True,
+                                                       interactive=False)
             self.rectangle = patches.Rectangle((start_x, start_y),
-                                               stop_x - start_x, stop_y - start_y,
-                                               linewidth = 1, edgecolor = 'r',
-                                               fill = False)
+                                               stop_x - start_x,
+                                               stop_y - start_y,
+                                               linewidth=1, edgecolor='r',
+                                               fill=False)
             self.axes[0].add_patch(self.rectangle)
         self.axes[1].clear()
         im_c = self.image[start_y:stop_y, start_x:stop_x]
@@ -330,7 +345,8 @@ class adjust_roi(object):
         pos_1 : (float, float)
             Position of one corner of the rectangle (x1, y1)
         pos_2 : (float, float)
-            Position of the diagonally opposite corner of the rectangle (x2, y2)
+            Position of the diagonally opposite corner of the rectangle (x2,
+            y2)
         """
         try:
             x1, y1, x2, y2 = pos_1.xdata, pos_1.ydata, pos_2.xdata, pos_2.ydata
@@ -342,7 +358,8 @@ class adjust_roi(object):
         y1 = min(max(y1, 0), height - 1)
         x2 = min(max(x2, 0), width - 1)
         y2 = min(max(y2, 0), height - 1)
-        self.center_x = round(0.5 * round(x1 + x2), 1)  # round to .5 (in between px)
+        # round to .5 (center between two pxs)
+        self.center_x = round(0.5 * round(x1 + x2), 1)
         self.center_y = round(0.5 * round(y1 + y2), 1)
         self.length_x = int(round(abs(x2 - x1))) + 1
         self.length_y = int(round(abs(y2 - y1))) + 1
@@ -363,9 +380,9 @@ class adjust_roi(object):
 class adjust_image_contrast(object):
     def __init__(self, image=None, dtype=None):
         """
-        Display images of a directory with an interactive widget and a slider in a
-        jupyter notebook, in the order sorted to their filename or a given key
-        function.
+        Display images of a directory with an interactive widget and a slider
+        in a jupyter notebook, in the order sorted to their filename or a given
+        key function.
 
         Parameters
         ----------
@@ -396,9 +413,12 @@ class adjust_image_contrast(object):
             self.axes[0].clear()
             self.axes[0].imshow(image, cmap=plt.cm.gray)
             self.axes[2].clear()
-            self.axes[2].hist(image.ravel(), bins=(2**8))  # plot hist with 8bit bins
-            self.spanselector = SpanSelector(self.axes[2], self.set_minmax_grey,
-                                             'horizontal', useblit=True)
+            # plot hist with 8bit bins
+            self.axes[2].hist(image.ravel(), bins=(2**8))
+            self.spanselector = SpanSelector(self.axes[2],
+                                             self.set_minmax_grey,
+                                             'horizontal',
+                                             useblit=True)
             self.axspan = self.axes[2].axvspan(self.min, self.max,
                                                facecolor='y', alpha=0.2)
         self.axes[1].clear()
@@ -443,9 +463,9 @@ class adjust_roi_contrast(object):
     def __init__(self, image=None, dtype=None,
                  background_image=None, min_grey=None, max_grey=None):
         """
-        Display images of a directory with an interactive widget and a slider in a
-        jupyter notebook, in the order sorted to their filename or a given key
-        function.
+        Display images of a directory with an interactive widget and a slider
+        in a jupyter notebook, in the order sorted to their filename or a given
+        key function.
 
         Parameters
         ----------
@@ -460,7 +480,6 @@ class adjust_roi_contrast(object):
         if background_image is not None:
             if isinstance(background_image, str):
                 self.image_background = pims.open(background_image)[0]
-
 
         # Get default ROI values to crop the image
         if self.image is not None:
@@ -506,6 +525,7 @@ class adjust_roi_contrast(object):
         ui_crop = HBox([left_box, right_box])
 
         self.stop_roi_callback = False
+
         def _set_roi(value):
             if self.stop_roi_callback:
                 return
@@ -536,6 +556,7 @@ class adjust_roi_contrast(object):
         display(ui_grey)
 
         self.stop_grey_callback = False
+
         def _set_minmax_grey(value):
             if self.stop_grey_callback:
                 return
@@ -548,9 +569,12 @@ class adjust_roi_contrast(object):
                 self.stop_grey_callback = False
 
             if self.image is not None:
-                self.set_minmax_grey(self.min_grey, self.max_grey, update_widgets=False)
-        self.center_x_interact = interactive(_set_minmax_grey, value=self._min_grey)
-        self.center_y_interact = interactive(_set_minmax_grey, value=self._max_grey)
+                self.set_minmax_grey(self.min_grey, self.max_grey,
+                                     update_widgets=False)
+        self.center_x_interact = interactive(_set_minmax_grey,
+                                             value=self._min_grey)
+        self.center_y_interact = interactive(_set_minmax_grey,
+                                             value=self._max_grey)
 
         # Call process_image only if an image was provided. Otherwise,
         # the function would fail due to uninitialized self.image
@@ -568,15 +592,17 @@ class adjust_roi_contrast(object):
         if image is not None:
             self.image = image
 
-        # Check, if the dimensions of the image have changed
-        # and initialize the widgets accordingly
+        # Check, if the dimensions of the image have changed. If so, initialize
+        # the widgets with the parameters of the new image.
         height, width = self.image.shape
         if width == self._length_x.max and height == self._length_y.max:
+            # Image dimensions have not changed.
             center_x = self.center_x
             center_y = self.center_y
             length_x = self.length_x
             length_y = self.length_y
         else:
+            # Image dimensions have changed
             center_x = (width - 1) / 2
             center_y = (height - 1) / 2
             length_x = width
@@ -592,8 +618,14 @@ class adjust_roi_contrast(object):
             self._length_y.value = height
             self.stop_roi_callback = False
 
-        # Check if the dtype of the image has changed and
-        # initialize the histogram widgets accordingly
+        # Calculate the ROI to crop the image
+        crop_roi = get_crop_image_roi(width, height,
+                                      center_x, center_y,
+                                      length_x, length_y)
+        start_x, stop_x, start_y, stop_y = crop_roi
+
+        # Check if the dtype of the image has changed and initialize the
+        # histogram widgets accordingly
         dtype, info = dtype_info(array=self.image)
         if info.min != self._min_grey.min or info.max != self._max_grey.max:
             self.stop_grey_callback = True
@@ -603,12 +635,6 @@ class adjust_roi_contrast(object):
             self._max_grey.max = info.max
             self.stop_grey_callback = False
 
-        # Calculate the ROI to crop the image
-        crop_roi = get_crop_image_roi(width, height,
-                                      center_x, center_y,
-                                      length_x, length_y)
-        start_x, stop_x, start_y, stop_y = crop_roi
-
         # Get the background corrected original image
         image_process = self.image_background_corrected
 
@@ -616,12 +642,15 @@ class adjust_roi_contrast(object):
         if image is not None:
             self.axes[0].clear()
             self.axes[0].imshow(image_process, cmap=plt.cm.gray)
-            self.rectangleselector = RectangleSelector(self.axes[0], self.set_roi,
-                                                       useblit=True, interactive=False)
+            self.rectangleselector = RectangleSelector(self.axes[0],
+                                                       self.set_roi,
+                                                       useblit=True,
+                                                       interactive=False)
             self.rectangle = patches.Rectangle((start_x, start_y),
-                                               stop_x - start_x, stop_y - start_y,
-                                               linewidth = 1, edgecolor = 'r',
-                                               fill = False)
+                                               stop_x - start_x,
+                                               stop_y - start_y,
+                                               linewidth=1, edgecolor='r',
+                                               fill=False)
             self.axes[0].add_patch(self.rectangle)
 
         # ROI crop the original image
@@ -629,19 +658,22 @@ class adjust_roi_contrast(object):
 
         # Update the histogram of the cropped original image
         self.axes[2].clear()
-        self.axes[2].hist(image_process.ravel(), bins=(2**8))  # plot hist with 8bit bins
+        # plot hist with 8bit bins
+        self.axes[2].hist(image_process.ravel(), bins=(2**8))
         self.axes[2].set_yscale('log')
 
         self.spanselector = SpanSelector(self.axes[2], self.set_minmax_grey,
                                          'horizontal', useblit=True)
 
         # Update the axvspan with the current min_grey/max_grey levels
-        if self.min_grey != self._min_grey.min or self.max_grey != self._max_grey.max:
+        if (self.min_grey != self._min_grey.min
+                or self.max_grey != self._max_grey.max):
             self.axspan = self.axes[2].axvspan(self.min_grey, self.max_grey,
                                                facecolor='y', alpha=0.2)
 
         # Adjust the contrast of the cropped image
-        image_process = convert_image(image_process, 'uint8', self.min_grey, self.max_grey)
+        image_process = convert_image(image_process, 'uint8',
+                                      self.min_grey, self.max_grey)
 
         # Update the plot of the processed image
         self.axes[1].clear()
@@ -649,7 +681,8 @@ class adjust_roi_contrast(object):
 
         # Update the histogram of the processed image
         self.axes[3].clear()
-        self.axes[3].hist(image_process.ravel(), bins=(2**8))  # plot hist with 8bit bins
+        # plot hist with 8bit bins
+        self.axes[3].hist(image_process.ravel(), bins=(2**8))
         self.axes[3].set_yscale('log')
 
         self.image_processed = image_process
@@ -665,7 +698,8 @@ class adjust_roi_contrast(object):
         pos_1 : (float, float)
             Position of one corner of the rectangle (x1, y1)
         pos_2 : (float, float)
-            Position of the diagonally opposite corner of the rectangle (x2, y2)
+            Position of the diagonally opposite corner of the rectangle (x2,
+            y2)
         """
         try:
             x1, y1, x2, y2 = pos_1.xdata, pos_1.ydata, pos_2.xdata, pos_2.ydata
@@ -681,7 +715,8 @@ class adjust_roi_contrast(object):
             y1 = min(max(y1, 0), height - 1)
             x2 = min(max(x2, 0), width - 1)
             y2 = min(max(y2, 0), height - 1)
-            center_x =  round(0.5 * round(x1 + x2), 1)  # round to .5 (in between px)
+            # round to .5 (in between tow pxs)
+            center_x = round(0.5 * round(x1 + x2), 1)
             center_y = round(0.5 * round(y1 + y2), 1)
             length_x = int(round(abs(x2 - x1))) + 1
             length_y = int(round(abs(y2 - y1))) + 1
@@ -769,12 +804,12 @@ class adjust_roi_contrast(object):
 
 
 class process_images(object):
-    def __init__(self, process, directory, prefix=None, suffix=None, extension='.tif',
-                 sort_key=None):
+    def __init__(self, process, directory, prefix=None, suffix=None,
+                 extension='.tif', sort_key=None):
         """
-        Display images of a directory with an interactive widget and a slider in a
-        jupyter notebook, in the order sorted to their filename or a given key
-        function.
+        Display images of a directory with an interactive widget and a slider
+        in a jupyter notebook, in the order sorted to their filename or a given
+        key function.
 
         Parameters
         ----------
@@ -790,7 +825,8 @@ class process_images(object):
             The extension of the images that should be displayed. Default is
             '.png'.
         sort_key : function
-            Function to be applied to every image filename found, before sorting.
+            Function to be applied to every image filename found, before
+            sorting.
         """
         sort_key = check_set(sort_key, creation_time)
         self.filenames = files(directory, prefix, suffix, extension, sort_key)
@@ -803,9 +839,11 @@ class process_images(object):
             print("No file found with prefix '%s', suffix '%s', and extension '%s'"
                   % (prefix, suffix, extension))
             return
-        self.split_regexp = Text(value='', placeholder='Regular Expression', description='SplitRegExp:')
+        self.split_regexp = Text(value='', placeholder='Regular Expression',
+                                 description='SplitRegExp:')
         self.splittime = BoundedFloatText(value=0.0, min=0, max=5,
-                                          step=0.05, description='SplitTime (s):')
+                                          step=0.05,
+                                          description='SplitTime (s):')
         self.listselect = IntSlider(value=0, min=0, max=len(self.filelists)-1,
                                     step=1, description='MovieIDX:')
         self.filerange = IntRangeSlider(value=[0, stop-1], min=0, max=stop-1,
@@ -818,11 +856,14 @@ class process_images(object):
         display(ui)
 
         def set_splittime(t, regexp):
-            if regexp == '': regexp = None
+            if regexp == '':
+                regexp = None
             self.filelists = [(start, stop) for filenames, start, stop
-                              in split_filenames(self.filenames, split_time=t, regexp=regexp)]
+                              in split_filenames(self.filenames, split_time=t,
+                                                 regexp=regexp)]
             self.listselect.max = len(self.filelists) - 1
             set_filelist(self.listselect.value)
+
         def set_filelist(i):
             min = self.filelists[i][0]
             max = self.filelists[i][1] - 1
@@ -833,6 +874,7 @@ class process_images(object):
                 self.filerange.max = max
                 self.filerange.min = min
             self.filerange.value = (min, max)
+
         def set_range(minmax):
             min = minmax[0]
             max = minmax[1]
@@ -842,9 +884,11 @@ class process_images(object):
             else:
                 self.fileselect.max = max
                 self.fileselect.min = min
+
         def process_image(i):
             self.process_image(i)
-        self.splitinteract = interactive(set_splittime, t=self.splittime, regexp=self.split_regexp)
+        self.splitinteract = interactive(set_splittime, t=self.splittime,
+                                         regexp=self.split_regexp)
         self.listinteract = interactive(set_filelist, i=self.listselect)
         self.rangeinteract = interactive(set_range, minmax=self.filerange)
         self.selectinteract = interactive(process_image, i=self.fileselect)
@@ -884,15 +928,21 @@ def get_image_shape(filename):
     return width, height
 
 
-def get_crop_image_roi(width, height, center_x=None, center_y=None, length_x=None, length_y=None, multiple_of=None):
+def get_crop_image_roi(width, height, center_x=None, center_y=None,
+                       length_x=None, length_y=None, multiple_of=None):
     def get_start_stop(length, center, new_length, multiple_of=None):
-        if center is None: center = (length - 1) / 2  # middle of the image
-        else: round(0.5 * round(center * 2), 1)  # rounded to .5 (in between two pixels is allowed)
+        if center is None:
+            center = (length - 1) / 2  # middle of the image
+        # round to .5 (in between two pixels is allowed)
+        else: round(0.5 * round(center * 2), 1)
         new_length = int(round(check_set(new_length, length)))
 
-        center = min(max(center, 0), length - 1)  # center between 0 and length - 1 (first/last px)
-        max_length = int(round(min(center, length - center - 1) * 2 + 1))  # set max_length according to position of center
-        new_length = min(max(new_length, 1), max_length)  # set new_length between 1 and (new_length or max_length)
+        # center between 0 and length - 1 (first/last px)
+        center = min(max(center, 0), length - 1)
+        # set max_length according to position of center
+        max_length = int(round(min(center, length - center - 1) * 2 + 1))
+        # set new_length between 1 and (new_length or max_length)
+        new_length = min(max(new_length, 1), max_length)
 
         # make new_length a multiple of multiple_of
         if multiple_of is not None:
@@ -915,52 +965,59 @@ def get_crop_image_roi(width, height, center_x=None, center_y=None, length_x=Non
     multiple_of = np.asarray(multiple_of).flatten().tolist()
     if len(multiple_of) == 1:
         multiple_of.append(multiple_of[0])
-    start_x, stop_x = get_start_stop(width, center_x, length_x, multiple_of[0])
-    start_y, stop_y = get_start_stop(height, center_y, length_y, multiple_of[1])
+    start_x, stop_x = get_start_stop(width, center_x, length_x,
+                                     multiple_of[0])
+    start_y, stop_y = get_start_stop(height, center_y, length_y,
+                                     multiple_of[1])
 
     return (start_x, stop_x, start_y, stop_y)
 
 
-def scalebar(image, resolution=None, width=1.0, height=None, pos_x_rel=0.98, pos_y_rel=None, value=None):
+def scalebar(image, resolution=None, width=None, height=None,
+             pos_x_rel=None, pos_y_rel=None, value=None):
     """
     Draw a scalebar on top of an image
 
     Parameters
     ----------
     resolution : float or list of floats
-        The resolution of the image in unit/px
+        The resolution of the image in unit/px for x and y
     width : float
-        The width of the scalebar in units
+        The width of the scalebar in units. Defaults to 1.0.
     height : float
         The height of the scalebar in units. Defaults to 0.15*`width`.
     pos_x_rel : float
         Relative x position of image up to where the scalebar should extend.
+        Defaults to 0.98.
     pos_y_rel : float
         Relative y position of image up to where the scalebar should extend.
+        Defaults to "(height - (width * (1 - pos_x_rel))) / height".
     value : int
-        The integer value of the color of the scalebar. Defaults to the
-        maximal allowed value of the `image` arra. Depending on the lookup
-        table this translates usually to white or black.
+        The integer value of the color of the scalebar. Defaults to the maximal
+        allowed value of the `image` array. Depending on the lookup table this
+        translates usually to white or black.
     """
     resolution = check_set(resolution, 1.0)
     resolution = np.asarray(resolution).flatten().tolist()
     if len(resolution) == 1:
         resolution.append(resolution[0])
-    width_px = int(np.round(width / resolution[0]))
+    width = check_set(width, 1.0)
+    width_px = int(round(width / resolution[0]))
     height = check_set(height, 0.15 * width)
-    height_px = int(np.round(height / resolution[1]))
+    height_px = int(round(height / resolution[1]))
 
     image_height, image_width = image.shape
-    pos_x = int(np.round(pos_x_rel * image_width))
+    pos_x_rel = check_set(pos_x_rel, 0.98)
+    pos_x = int(round(pos_x_rel * image_width))
     if pos_y_rel is None:
         pos_y = image_height - (image_width - pos_x)
     else:
-        pos_y = int(np.round(pos_y_rel * image_height))
+        pos_y = int(round(pos_y_rel * image_height))
 
     dtype, info = dtype_info(array=image)
     value = check_set(value, info.max)
 
-    image[pos_y - height_px:pos_y, pos_x - width_px:pos_x] = value
+    image[pos_y- height_px:pos_y, pos_x - width_px:pos_x] = value
 
 
 def creation_time(filename):
@@ -972,11 +1029,12 @@ def get_fps(filenames, fps=None):
     Parameters
     ----------
     fps : float or str
-        Autodetect or set the frames per second of the source files. 'predominant'
-        calculates the median of all creation time differences between all files
-        and uses the reciprocal as fps. 'total' uses the difference of the creation
-        time of the last and the first file and divides it by the total number of
-        images. 'no_fps' returns `None`. Defaults to 'predominant'.
+        Autodetect or set the frames per second of the source files.
+        'predominant' calculates the median of all creation time differences
+        between all files and uses the reciprocal as fps. 'total' uses the
+        difference of the creation time of the last and the first file and
+        divides it by the total number of images. 'no_fps' returns `None`.
+        Defaults to 'predominant'.
     """
     def fps_explicit():
         return fps
@@ -1003,12 +1061,12 @@ def get_fps(filenames, fps=None):
     return fps_options.get(fps, fps_explicit)()
 
 
-def _create_video(filenames, savename,
-                  background_image=None, bin_by=None, min_grey=None, max_grey=None,
-                  width_grey=None, offset_grey=None,
-                  center_x=None, center_y=None, length_x=None, length_y=None,
-                  resolution=1, scalebar_width=None, scalebar_height=None,
-                  annotations=None, **kwargs):
+def _create_video(filenames, savename, background_image=None, bin_by=None,
+                  min_grey=None, max_grey=None, width_grey=None,
+                  offset_grey=None, center_x=None, center_y=None,
+                  length_x=None, length_y=None, resolution=1,
+                  scalebar_width=None, scalebar_height=None, annotations=None,
+                  **kwargs):
     image_width, image_height = get_image_shape(filenames[0])
     center_x = check_set(center_x, (image_width - 1) / 2)
     center_y = check_set(center_y, (image_height - 1) / 2)
@@ -1024,8 +1082,8 @@ def _create_video(filenames, savename,
     for i, bb in enumerate(bin_by):
         multiple_of[i] = multiple_of[i] * bb
     # Get the crop region of the image
-    roi = get_crop_image_roi(image_width, image_height, center_x, center_y, length_x, length_y,
-                             multiple_of=multiple_of)
+    roi = get_crop_image_roi(image_width, image_height, center_x, center_y,
+                             length_x, length_y, multiple_of=multiple_of)
     idx_x = slice(roi[0], roi[1])  # columns
     idx_y = slice(roi[2], roi[3])  # rows
 
@@ -1064,12 +1122,15 @@ def _create_video(filenames, savename,
         # Read, crop and subtract background from image
         im = pims.open(filename)[0][idx_y, idx_x] - background
         # Bin the image
-        im = bin_image(im, bin_by=bin_by, f=np.mean)
-        # Adjust the grey levels
-        min_grey, max_grey = get_minmax_grey(im, min_grey, max_grey, width_grey, offset_grey)
+        im = bin_image(im, bin_by=bin_by, func=np.mean)
+        # Convert image into 8bit image and adjust the grey levels
+        min_grey, max_grey = get_minmax_grey(im, min_grey, max_grey,
+                                             width_grey, offset_grey)
         im = convert_image(im, 'uint8', min_grey, max_grey)
+        # Draw a scalebar
         if scalebar_width is not None:
-            scalebar(im, resolution, width=scalebar_width, height=scalebar_height)
+            scalebar(im, resolution, width=scalebar_width,
+                     height=scalebar_height)
         for annotation in annotations:
             if i in annotation[0]:
                 pos = np.asarray(annotation[1])
@@ -1081,30 +1142,82 @@ def _create_video(filenames, savename,
     writer.close()
 
 
-def create_video(directory, prefix=None, suffix=None, extension=None, sort_key=None,
-                 start_image_i=None, stop_image_i=None, split_time=None, split_regexp=None,
-                 fps=None, fps_speedup=1, decimate=1,
-                 background_image=None, bin_by=None, min_grey=None, max_grey=None,
-                 width_grey=None, offset_grey=None,
+def create_video(directory, prefix=None, suffix=None, extension=None,
+                 sort_key=None, start_image_i=None, stop_image_i=None,
+                 split_time=None, split_regexp=None, fps=None, fps_speedup=1.0,
+                 decimate=1, background_image=None, bin_by=None, min_grey=None,
+                 max_grey=None, width_grey=None, offset_grey=None,
                  center_x=None, center_y=None, length_x=None, length_y=None,
                  resolution=1, scalebar_width=None, scalebar_height=None,
-                 annotations=None,
-                 videoname=None, videosuffix='.mp4', videodirectory=None, **kwargs):
+                 annotations=None, videoname=None, videosuffix='.mp4',
+                 videodirectory=None, **kwargs):
     """
     Parameters
     ----------
+    directory : str
+        The directory to look in for image files to create the video with.
+    prefix : str
+        A prefix to filter filenames with. Only filenames of the form "prefix*"
+        will be used for video creation. Defaults to 'None'.
+    suffix : str
+        A suffix to filter filenames with. Only filenames of the form
+        '`prefix`*`suffix``extension`' will be used for video creation.
+        Defaults to 'None'.
+    extension : str
+        The extension the filenames have to have. Defaults to 'None'.
+    sort_key : func
+        A function to sort the filenames with. Defaults to `creation_time`.
+    start_image_i : int
+        The index of the first file from the sorted filenames to be used for
+        the video.
+    stop_image_i : int
+        The stop index of the file to be used for the video. Only filenames up
+        to index `stop_image_i` - 1 will be used.
+    split_time : float
+        The time in s, upon which two consecutive files/images are considered
+        to belong to different videos and are therefore split into different
+        video files.
+    split_regexp : str
+        Regular expression to extract the split_time in ms from the filenames.
+        For instance, to extract the time from filenames like
+        'B14-029ms-8902.tif', one can use the regexp: '-([0-9]*)ms-'.
     fps : float or str
-        Autodetect or set the frames per second of the source files. 'predominant'
-        calculates the median of all creation time differences between all files
-        and uses the reciprocal as fps. 'total' uses the difference of the creation
-        time of the last and the first file and divides it by the total number of
-        images. Defaults to 'predominant'.
+        Autodetect or set the frames per second of the source files.
+        'predominant' calculates the median of all creation time differences
+        between all files and uses the reciprocal as fps. 'total' uses the
+        difference of the creation time of the last and the first file and
+        divides it by the total number of images. 'no_fps' sets the fps to
+        'None'. This is usefull for videoformat (see `videosuffix`) not
+        suporting setting the `fps`. Defaults to 'predominant'.
+    fps_speedup : float
+        How much to speed up the video from realtime.
+    decimate : int
+        How many images to jump from frame to frame.
+    background_image = str
+        Path to a background image file.
+    bin_by : int or (int, int)
+        Factor of how much pixels of the original image should be binned in the
+        two dimensions (x, y). If only one int is given, assume x=y. Defaults
+        to (1, 1).
+    resolution : float
+        Resolution of the image in units/px. This value is used to calculate
+        the size of the scalebar.
+    annotations : list of (indices, (x, y), size, text)
+        A list of annotations. An annotation consists of an indexible 4tuple.
+        'indices' are the indices of the images of the final movie, which
+        should be annotated. This can be any object supporting the 'in'
+        operator. '(x, y)' are the coordinates in pxs of the lower left corner
+        of the text. 'size' is the size of the font. 'text' is the text used
+        for the annotation.
+    **kwargs : dict
+        `kwargs` is passed to the function `imageio.get_writer`.
     """
     sort_key = check_set(sort_key, creation_time)
     filenames = files(directory, prefix=prefix, suffix=suffix,
                       extension=extension, sort_key=sort_key)
     filenames = filenames[start_image_i:stop_image_i]
-    filelists = split_filenames(filenames, split_time=split_time, regexp=split_regexp)
+    filelists = split_filenames(filenames, split_time=split_time,
+                                regexp=split_regexp)
 
     videoname = check_set(videoname, prefix)
     videodirectory = check_set(videodirectory, os.path.join(directory, '..'))
@@ -1116,10 +1229,12 @@ def create_video(directory, prefix=None, suffix=None, extension=None, sort_key=N
             if len(filelists) == 1:
                 _videoname = ''.join((videoname, videosuffix))
             else:
-                _videoname = ''.join((videoname, '_{:02d}'.format(i+1), videosuffix))
+                _videoname = ''.join((videoname, '_{:02d}'.format(i+1),
+                                      videosuffix))
             savename = os.path.join(videodirectory, _videoname)
 
-            print('Creating Video \'{}\' of {} files ...'.format(savename, len(_filenames)))
+            print('Creating Video \'{}\' of {} files ...'.format(
+                                                    savename, len(_filenames)))
             print('  Frame slice {}:{}'.format(start, stop))
             fps_source = get_fps(filenames, fps=fps)
             if fps_source is not None:
@@ -1130,7 +1245,8 @@ def create_video(directory, prefix=None, suffix=None, extension=None, sort_key=N
 
             _create_video(_filenames, savename,
                           background_image=background_image, bin_by=bin_by,
-                          min_grey=min_grey, max_grey=max_grey, width_grey=width_grey, offset_grey=offset_grey,
+                          min_grey=min_grey, max_grey=max_grey,
+                          width_grey=width_grey, offset_grey=offset_grey,
                           center_x=center_x, center_y=center_y,
                           length_x=length_x, length_y=length_y,
                           resolution=resolution, scalebar_width=scalebar_width,
@@ -1151,13 +1267,14 @@ def check_framerate(filenames, tdiff_max, bins):
     print('Image files that have been overwritten: {:.1f} %'.format(
         len(tdiffs[tdiffs > tdiff_max]) / len(tdiffs) * 100))
     tdiffs_filtered = tdiffs[tdiffs < tdiff_max]
-    print('Number of time differences that are ignored in histogram: {}'.format(
-        len(tdiffs) - len(tdiffs_filtered)))
+    print(
+        'Number of time differences that are ignored in histogram: {}'.format(
+            len(tdiffs) - len(tdiffs_filtered)))
 
     fig2, ax2 = plt.subplots()
     ax2.hist(tdiffs_filtered, bins=bins)
     ax2.set_yscale('log')
-    ax2.set_xlim(tdiffs_filtered.min(),tdiffs_filtered.max())
+    ax2.set_xlim(tdiffs_filtered.min(), tdiffs_filtered.max())
     ax2.set_title('Time differences between recorded images from the Video.vi')
     ax2.set_xlabel('Image time difference (s)')
     ax2.set_ylabel('Number of occasions')
