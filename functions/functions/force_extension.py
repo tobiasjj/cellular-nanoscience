@@ -71,8 +71,8 @@ def angle(v1, v2):
     return math.acos(cos_theta)
 
 
-def binned_force_extension(tether, i, bins=None, resolution=None, sortcolumn=0,
-                           angles=False, extra_traces=None,
+def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
+                           sortcolumn=0, angles=False, extra_traces=None,
                            angles_after_binning=False, avoid_twopi_switch=False):
     """
     Parameters
@@ -90,7 +90,7 @@ def binned_force_extension(tether, i, bins=None, resolution=None, sortcolumn=0,
     angles_after_binning : bool
         13,14,15,16: theta (13,15) and phi (14,16) for extension and force
     """
-    fe_pair = tether.force_extension_pair(i=i, time=True)
+    fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin)
     (x_stress, y_stress, info_stress,
      x_release, y_release, info_release,
      t_stress, t_release) = fe_pair
@@ -156,7 +156,7 @@ def binned_force_extension(tether, i, bins=None, resolution=None, sortcolumn=0,
     return edges, centers, widths, bin_means, bin_stds, bin_Ns
 
 
-def fbnl_force_extension(tether, i, filter_time=0.005, edginess=1,
+def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
                          angles=False, extra_traces=None,
                          angles_after_filter=False, avoid_twopi_switch=False):
     """
@@ -182,7 +182,7 @@ def fbnl_force_extension(tether, i, filter_time=0.005, edginess=1,
         fbnl_filters is a list of two lists (0: stress, 1: release) containing
         the individual FBNL_Filter_results of the filtered data
     """
-    fe_pair = tether.force_extension_pair(i=i, time=True)
+    fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin)
     (x_stress, y_stress, info_stress,
      x_release, y_release, info_release,
      t_stress, t_release) = fe_pair
@@ -311,8 +311,8 @@ def plot_angle_extension(x, theta_phi, axes=None, show=False):
     return ax, ax2
 
 
-def update_force_extension(tether, i=0, bins=None, resolution=None,
-                           sortcolumn=0,
+def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
+                           resolution=None, sortcolumn=0,
                            ax=None, autoscale=True, xlim=None,
                            ylim=None, extra_traces=None):
     """
@@ -326,8 +326,8 @@ def update_force_extension(tether, i=0, bins=None, resolution=None,
         Set ylim of the axis.
     """
     # Calculate binned force extension data
-    result = binned_force_extension(tether=tether, i=i, bins=bins,
-                                    resolution=resolution,
+    result = binned_force_extension(tether=tether, i=i, posmin=posmin,
+                                    bins=bins, resolution=resolution,
                                     sortcolumn=sortcolumn,
                                     extra_traces=extra_traces)
     edges, centers, widths, bin_means, bin_stds, bin_Ns = result
@@ -380,8 +380,9 @@ def clear_force_extension(ax=None):
     ax.containers.clear()
 
 
-def show_force_extension(tether, i=0, bins=0, resolution=0, sortcolumn=0,
-                         autoscale=False, xlim=None, ylim=None, **kwargs):
+def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
+                         sortcolumn=0, autoscale=False, xlim=None, ylim=None,
+                         **kwargs):
     """
     Plot the force extension data with index `i` (see method
     `tether.force_extension_pairs()`) on tether.fe_figure.
@@ -402,14 +403,14 @@ def show_force_extension(tether, i=0, bins=0, resolution=0, sortcolumn=0,
     ax.set_ylabel('Force (pN)')
     ax.set_title('Force Extension')
 
-    def update_fe_pair(i, bins, resolution, sortcolumn, autoscale,
+    def update_fe_pair(i, posmin, bins, resolution, sortcolumn, autoscale,
                        xlim_l, xlim_h, ylim_l, ylim_h):
         if bins <= 0:
             bins = None
         if resolution <= 0:
             resolution = None
-        update_force_extension(tether, i, bins=bins, resolution=resolution,
-                               sortcolumn=sortcolumn,
+        update_force_extension(tether, i, posmin=posmin, bins=bins,
+                               resolution=resolution, sortcolumn=sortcolumn,
                                ax=ax, autoscale=autoscale,
                                xlim=(xlim_l, xlim_h),
                                ylim=(ylim_l, ylim_h), **kwargs)
@@ -417,7 +418,7 @@ def show_force_extension(tether, i=0, bins=0, resolution=0, sortcolumn=0,
 
     # Set default xlim/ylim values
     if xlim is None or ylim is None:
-        _xlim, _ylim = autolimits(tether)
+        _xlim, _ylim = autolimits(tether, posmin=posmin)
     xlim = xlim or _xlim
     ylim = ylim or _ylim
 
@@ -426,6 +427,7 @@ def show_force_extension(tether, i=0, bins=0, resolution=0, sortcolumn=0,
 
     # Build user interface (ui)
     index = BoundedIntText(value=i, min=0, max=stop - 1, description='FE_pair:')
+    posmin = FloatText(value=posmin, description='PosMin')
     bins = IntText(value=bins, description='Bins')
     resolution = FloatText(value=resolution, step=1,
                            description='Resolution')
@@ -442,11 +444,12 @@ def show_force_extension(tether, i=0, bins=0, resolution=0, sortcolumn=0,
     ui_plot = VBox((autolim, xlim_b, ylim_b))
 
     # initialize force extension plot
-    update_fe_pair(i, bins.value, resolution.value, sortcolumn.value,
+    update_fe_pair(i, posmin, bins.value, resolution.value, sortcolumn.value,
                    autolim.value, xlim[0], xlim[1], ylim[0], ylim[1])
 
     # Make user input fields interactive
     out = interactive_output(update_fe_pair, {'i': index,
+                                              'posmin': posmin,
                                               'bins': bins,
                                               'resolution': resolution,
                                               'sortcolumn': sortcolumn,
@@ -464,7 +467,8 @@ def show_force_extension(tether, i=0, bins=0, resolution=0, sortcolumn=0,
     return ui_fe, fig, ui_plot
 
 
-def autolimits(tether, samples=None, e=None, f=None, xlim=None, ylim=None):
+def autolimits(tether, posmin=10e-9, samples=None, e=None, f=None, xlim=None,
+               ylim=None):
         """
         Determine xlim and ylim values for force extension plots.
 
@@ -502,13 +506,13 @@ def autolimits(tether, samples=None, e=None, f=None, xlim=None, ylim=None):
             samples = slice(start, stop)
 
         if xlim is None and ylim is None and e is None and f is None:
-                e_f = tether.force_extension(samples=samples)  # m, N
+                e_f = tether.force_extension(samples=samples, posmin=posmin)  # m, N
                 e = e_f[:, 0]
                 f = e_f[:, 1]
         if xlim is None and e is None:
             e = tether.extension(samples=samples) # m
         if ylim is None and f is None:
-            f = tether.force(samples=samples) # N
+            f = tether.force(samples=samples, posmin=posmin) # N
 
         if xlim is None:
             e_min = e.min()
