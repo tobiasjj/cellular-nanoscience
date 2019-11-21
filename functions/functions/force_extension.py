@@ -444,8 +444,9 @@ def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
     ui_plot = VBox((autolim, xlim_b, ylim_b))
 
     # initialize force extension plot
-    update_fe_pair(i, posmin, bins.value, resolution.value, sortcolumn.value,
-                   autolim.value, xlim[0], xlim[1], ylim[0], ylim[1])
+    update_fe_pair(i, posmin.value, bins.value, resolution.value,
+                   sortcolumn.value, autolim.value, xlim[0], xlim[1], ylim[0],
+                   ylim[1])
 
     # Make user input fields interactive
     out = interactive_output(update_fe_pair, {'i': index,
