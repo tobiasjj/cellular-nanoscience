@@ -440,7 +440,7 @@ def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
     ylim_h = FloatText(value=ylim[1])
     xlim_b = HBox((Label('xlim'), xlim_l, xlim_h))
     ylim_b = HBox((Label('ylim'), ylim_l, ylim_h))
-    ui_fe = VBox((index, HBox((bins, resolution, sortcolumn))))
+    ui_fe = VBox((Hbox(index, posmin), HBox((bins, resolution, sortcolumn))))
     ui_plot = VBox((autolim, xlim_b, ylim_b))
 
     # initialize force extension plot
