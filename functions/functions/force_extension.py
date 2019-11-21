@@ -511,7 +511,7 @@ def autolimits(tether, posmin=10e-9, samples=None, e=None, f=None, xlim=None,
                 e = e_f[:, 0]
                 f = e_f[:, 1]
         if xlim is None and e is None:
-            e = tether.extension(samples=samples) # m
+            e = tether.extension(samples=samples, posmin=posmin) # m
         if ylim is None and f is None:
             f = tether.force(samples=samples, posmin=posmin) # N
 
