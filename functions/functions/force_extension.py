@@ -25,7 +25,7 @@ import numpy as np
 import os
 import collections
 import itertools
-from ...stepfinder.stepfinder import filter_fbnl
+from stepfinder import filter_fbnl
 
 
 def cart2sph(x, y, z, offset_phi=0, positive_phi=False):

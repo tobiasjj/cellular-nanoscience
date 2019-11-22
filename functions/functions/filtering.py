@@ -20,7 +20,7 @@ import numpy as np
 from scipy.ndimage import convolve1d
 from scipy.ndimage import median_filter
 
-from ...stepfinder.stepfinder import filter_fbnl
+from stepfinder import filter_fbnl
 
 
 def filter_fbnl_data(data, resolution, filter_time=0.005, edginess=1):
