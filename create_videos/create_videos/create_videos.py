@@ -198,7 +198,7 @@ def convert_uint16_uint8(image, minimum=None, maximum=None, width=None,
     return convert_image(image, 'uint8', minimum, maximum)
 
 
-def calculate_background(filenames, defect_roi=None, replace_mode='v'):
+def calculate_background(filenames, defect_roi=None, replace_mode='v', normalize=True):
     """
     Parameters
     ----------
@@ -237,8 +237,11 @@ def calculate_background(filenames, defect_roi=None, replace_mode='v'):
             median[start_y:stop_y, start_x + px:stop_x] = \
                 median[start_y:stop_y, stop_x:stop_x + px]
 
-    # normalize the median to the minimum
-    minimum = median.min()
+    # normalize the median image to the minimum
+    if normalize:
+        minimum = median.min()
+    else:
+        minimum = 0
     return median - minimum
 
 
@@ -1261,6 +1264,10 @@ def check_framerate(filenames, tdiff_max, bins):
 
     fig, ax = plt.subplots()
     ax.plot(ct)
+    
+    ax.set_title('Creation times of images')
+    ax.set_xlabel('Index of image')
+    ax.set_ylabel('Creation time of image (ms)')
 
     # Show the histogram of the differences of creation times of the images
     tdiffs = ct[1:] - ct[:-1]
@@ -1275,7 +1282,7 @@ def check_framerate(filenames, tdiff_max, bins):
     ax2.hist(tdiffs_filtered, bins=bins)
     ax2.set_yscale('log')
     ax2.set_xlim(tdiffs_filtered.min(), tdiffs_filtered.max())
-    ax2.set_title('Time differences between recorded images from the Video.vi')
+    ax2.set_title('Time differences between recorded images')
     ax2.set_xlabel('Image time difference (s)')
     ax2.set_ylabel('Number of occasions')
 
