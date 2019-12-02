@@ -1,0 +1,898 @@
+
+% Default to the notebook output style
+
+    
+
+
+% Inherit from the specified cell style.
+
+
+
+
+    
+\documentclass[11pt]{article}
+
+    
+    
+    \usepackage[T1]{fontenc}
+    % Nicer default font (+ math font) than Computer Modern for most use cases
+    \usepackage{mathpazo}
+
+    % Basic figure setup, for now with no caption control since it's done
+    % automatically by Pandoc (which extracts ![](path) syntax from Markdown).
+    \usepackage{graphicx}
+    % We will generate all images so they have a width \maxwidth. This means
+    % that they will get their normal width if they fit onto the page, but
+    % are scaled down if they would overflow the margins.
+    \makeatletter
+    \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+    \else\Gin@nat@width\fi}
+    \makeatother
+    \let\Oldincludegraphics\includegraphics
+    % Set max figure width to be 80% of text width, for now hardcoded.
+    \renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=.8\maxwidth]{#1}}
+    % Ensure that by default, figures have no caption (until we provide a
+    % proper Figure object with a Caption API and a way to capture that
+    % in the conversion process - todo).
+    \usepackage{caption}
+    \DeclareCaptionLabelFormat{nolabel}{}
+    \captionsetup{labelformat=nolabel}
+
+    \usepackage{adjustbox} % Used to constrain images to a maximum size 
+    \usepackage{xcolor} % Allow colors to be defined
+    \usepackage{enumerate} % Needed for markdown enumerations to work
+    \usepackage{geometry} % Used to adjust the document margins
+    \usepackage{amsmath} % Equations
+    \usepackage{amssymb} % Equations
+    \usepackage{textcomp} % defines textquotesingle
+    % Hack from http://tex.stackexchange.com/a/47451/13684:
+    \AtBeginDocument{%
+        \def\PYZsq{\textquotesingle}% Upright quotes in Pygmentized code
+    }
+    \usepackage{upquote} % Upright quotes for verbatim code
+    \usepackage{eurosym} % defines \euro
+    \usepackage[mathletters]{ucs} % Extended unicode (utf-8) support
+    \usepackage[utf8x]{inputenc} % Allow utf-8 characters in the tex document
+    \usepackage{fancyvrb} % verbatim replacement that allows latex
+    \usepackage{grffile} % extends the file name processing of package graphics 
+                         % to support a larger range 
+    % The hyperref package gives us a pdf with properly built
+    % internal navigation ('pdf bookmarks' for the table of contents,
+    % internal cross-reference links, web links for URLs, etc.)
+    \usepackage{hyperref}
+    \usepackage{longtable} % longtable support required by pandoc >1.10
+    \usepackage{booktabs}  % table support for pandoc > 1.12.2
+    \usepackage[inline]{enumitem} % IRkernel/repr support (it uses the enumerate* environment)
+    \usepackage[normalem]{ulem} % ulem is needed to support strikethroughs (\sout)
+                                % normalem makes italics be italics, not underlines
+    
+
+    
+    
+    % Colors for the hyperref package
+    \definecolor{urlcolor}{rgb}{0,.145,.698}
+    \definecolor{linkcolor}{rgb}{.71,0.21,0.01}
+    \definecolor{citecolor}{rgb}{.12,.54,.11}
+
+    % ANSI colors
+    \definecolor{ansi-black}{HTML}{3E424D}
+    \definecolor{ansi-black-intense}{HTML}{282C36}
+    \definecolor{ansi-red}{HTML}{E75C58}
+    \definecolor{ansi-red-intense}{HTML}{B22B31}
+    \definecolor{ansi-green}{HTML}{00A250}
+    \definecolor{ansi-green-intense}{HTML}{007427}
+    \definecolor{ansi-yellow}{HTML}{DDB62B}
+    \definecolor{ansi-yellow-intense}{HTML}{B27D12}
+    \definecolor{ansi-blue}{HTML}{208FFB}
+    \definecolor{ansi-blue-intense}{HTML}{0065CA}
+    \definecolor{ansi-magenta}{HTML}{D160C4}
+    \definecolor{ansi-magenta-intense}{HTML}{A03196}
+    \definecolor{ansi-cyan}{HTML}{60C6C8}
+    \definecolor{ansi-cyan-intense}{HTML}{258F8F}
+    \definecolor{ansi-white}{HTML}{C5C1B4}
+    \definecolor{ansi-white-intense}{HTML}{A1A6B2}
+
+    % commands and environments needed by pandoc snippets
+    % extracted from the output of `pandoc -s`
+    \providecommand{\tightlist}{%
+      \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+    % Add ',fontsize=\small' for more characters per line
+    \newenvironment{Shaded}{}{}
+    \newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+    \newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+    \newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+    \newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+    \newcommand{\RegionMarkerTok}[1]{{#1}}
+    \newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\NormalTok}[1]{{#1}}
+    
+    % Additional commands for more recent versions of Pandoc
+    \newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{{#1}}}
+    \newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{{#1}}}
+    \newcommand{\ImportTok}[1]{{#1}}
+    \newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{{#1}}}}
+    \newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{{#1}}}
+    \newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{{#1}}}
+    \newcommand{\BuiltInTok}[1]{{#1}}
+    \newcommand{\ExtensionTok}[1]{{#1}}
+    \newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{{#1}}}
+    \newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{{#1}}}
+    \newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    
+    
+    % Define a nice break command that doesn't care if a line doesn't already
+    % exist.
+    \def\br{\hspace*{\fill} \\* }
+    % Math Jax compatability definitions
+    \def\gt{>}
+    \def\lt{<}
+    % Document parameters
+    \title{Fit\_annealing\_kinetics\_spectrofluorometer}
+    
+    
+    
+
+    % Pygments definitions
+    
+\makeatletter
+\def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
+    \let\PY@ul=\relax \let\PY@tc=\relax%
+    \let\PY@bc=\relax \let\PY@ff=\relax}
+\def\PY@tok#1{\csname PY@tok@#1\endcsname}
+\def\PY@toks#1+{\ifx\relax#1\empty\else%
+    \PY@tok{#1}\expandafter\PY@toks\fi}
+\def\PY@do#1{\PY@bc{\PY@tc{\PY@ul{%
+    \PY@it{\PY@bf{\PY@ff{#1}}}}}}}
+\def\PY#1#2{\PY@reset\PY@toks#1+\relax+\PY@do{#2}}
+
+\expandafter\def\csname PY@tok@w\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.73,0.73}{##1}}}
+\expandafter\def\csname PY@tok@c\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.74,0.48,0.00}{##1}}}
+\expandafter\def\csname PY@tok@k\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kt\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.69,0.00,0.25}{##1}}}
+\expandafter\def\csname PY@tok@o\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@ow\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nf\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nc\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nn\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@ne\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.82,0.25,0.23}{##1}}}
+\expandafter\def\csname PY@tok@nv\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@no\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.53,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nl\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.63,0.63,0.00}{##1}}}
+\expandafter\def\csname PY@tok@ni\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.60,0.60,0.60}{##1}}}
+\expandafter\def\csname PY@tok@na\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.49,0.56,0.16}{##1}}}
+\expandafter\def\csname PY@tok@nt\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nd\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\expandafter\def\csname PY@tok@s\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sd\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@si\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.53}{##1}}}
+\expandafter\def\csname PY@tok@se\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sr\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.53}{##1}}}
+\expandafter\def\csname PY@tok@ss\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@sx\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@m\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@gh\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@gu\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.50,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@gd\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.63,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@gi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.63,0.00}{##1}}}
+\expandafter\def\csname PY@tok@gr\endcsname{\def\PY@tc##1{\textcolor[rgb]{1.00,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@ge\endcsname{\let\PY@it=\textit}
+\expandafter\def\csname PY@tok@gs\endcsname{\let\PY@bf=\textbf}
+\expandafter\def\csname PY@tok@gp\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@go\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.53,0.53,0.53}{##1}}}
+\expandafter\def\csname PY@tok@gt\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.27,0.87}{##1}}}
+\expandafter\def\csname PY@tok@err\endcsname{\def\PY@bc##1{\setlength{\fboxsep}{0pt}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}
+\expandafter\def\csname PY@tok@kc\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kd\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kn\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kr\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@bp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@fm\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@vc\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vg\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vm\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@sa\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sc\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@dl\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@s2\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sh\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@s1\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@mb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mf\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mh\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@il\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mo\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@ch\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cm\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cpf\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@c1\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cs\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+
+\def\PYZbs{\char`\\}
+\def\PYZus{\char`\_}
+\def\PYZob{\char`\{}
+\def\PYZcb{\char`\}}
+\def\PYZca{\char`\^}
+\def\PYZam{\char`\&}
+\def\PYZlt{\char`\<}
+\def\PYZgt{\char`\>}
+\def\PYZsh{\char`\#}
+\def\PYZpc{\char`\%}
+\def\PYZdl{\char`\$}
+\def\PYZhy{\char`\-}
+\def\PYZsq{\char`\'}
+\def\PYZdq{\char`\"}
+\def\PYZti{\char`\~}
+% for compatibility with earlier versions
+\def\PYZat{@}
+\def\PYZlb{[}
+\def\PYZrb{]}
+\makeatother
+
+
+    % Exact colors from NB
+    \definecolor{incolor}{rgb}{0.0, 0.0, 0.5}
+    \definecolor{outcolor}{rgb}{0.545, 0.0, 0.0}
+
+
+
+    
+    % Prevent overflowing lines due to hard-to-break entities
+    \sloppy 
+    % Setup hyperref package
+    \hypersetup{
+      breaklinks=true,  % so long urls are correctly broken across lines
+      colorlinks=true,
+      urlcolor=urlcolor,
+      linkcolor=linkcolor,
+      citecolor=citecolor,
+      }
+    % Slightly bigger margins than the latex defaults
+    
+    \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+    
+    
+
+    \begin{document}
+    
+    
+    \maketitle
+    
+    
+
+    
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}398}]:} \PY{k+kn}{import} \PY{n+nn}{ipympl}
+          \PY{k+kn}{from} \PY{n+nn}{matplotlib} \PY{k}{import} \PY{n}{pyplot} \PY{k}{as} \PY{n}{plt}
+          
+          \PY{k+kn}{import} \PY{n+nn}{sys}
+          \PY{n}{sys}\PY{o}{.}\PY{n}{path}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{/nfs/home/tobiasj/ipython/notebooks/cn\PYZus{}plot\PYZus{}style}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+          \PY{k+kn}{import} \PY{n+nn}{cn\PYZus{}plot\PYZus{}style} \PY{k}{as} \PY{n+nn}{cnps}
+          
+          \PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+          \PY{k+kn}{import} \PY{n+nn}{scipy}
+          \PY{k+kn}{import} \PY{n+nn}{os}
+          \PY{k+kn}{import} \PY{n+nn}{csv}
+          \PY{k+kn}{import} \PY{n+nn}{errno}
+          
+          \PY{k+kn}{import} \PY{n+nn}{scipy} \PY{k}{as} \PY{n+nn}{sp}
+          \PY{k+kn}{import} \PY{n+nn}{scipy}\PY{n+nn}{.}\PY{n+nn}{optimize}
+          
+          \PY{k+kn}{from} \PY{n+nn}{lmfit} \PY{k}{import} \PY{n}{minimize}\PY{p}{,} \PY{n}{Parameters}\PY{p}{,} \PY{n}{fit\PYZus{}report}
+          \PY{k+kn}{from} \PY{n+nn}{mpl\PYZus{}toolkits}\PY{n+nn}{.}\PY{n+nn}{axes\PYZus{}grid1} \PY{k}{import} \PY{n}{host\PYZus{}subplot}\PY{p}{,} \PY{n}{host\PYZus{}axes}
+          \PY{k+kn}{from} \PY{n+nn}{numpy} \PY{k}{import} \PY{n}{sin}\PY{p}{,} \PY{n}{exp}
+          \PY{k+kn}{from} \PY{n+nn}{scipy} \PY{k}{import} \PY{n}{constants}
+          \PY{k+kn}{import} \PY{n+nn}{inspect}
+          
+          
+          \PY{k}{def} \PY{n+nf}{residual}\PY{p}{(}\PY{n}{params}\PY{p}{,} \PY{n}{func}\PY{p}{,} \PY{n}{x}\PY{p}{,} \PY{n}{data}\PY{o}{=}\PY{k+kc}{None}\PY{p}{,} \PY{n}{eps}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{:}
+              \PY{n}{model} \PY{o}{=} \PY{n}{func}\PY{p}{(}\PY{n}{x}\PY{p}{,} \PY{o}{*}\PY{o}{*}\PY{n}{params}\PY{p}{)}
+          
+              \PY{k}{if} \PY{n}{data} \PY{o+ow}{is} \PY{k+kc}{None}\PY{p}{:}
+                  \PY{k}{return} \PY{n}{model}
+              \PY{k}{if} \PY{n}{eps} \PY{o+ow}{is} \PY{k+kc}{None}\PY{p}{:}
+                  \PY{k}{return} \PY{p}{(}\PY{n}{model} \PY{o}{\PYZhy{}} \PY{n}{data}\PY{p}{)}
+              \PY{k}{return} \PY{p}{(}\PY{n}{model} \PY{o}{\PYZhy{}} \PY{n}{data}\PY{p}{)} \PY{o}{/} \PY{n}{eps}
+          
+          
+          \PY{k}{def} \PY{n+nf}{create\PYZus{}params}\PY{p}{(}\PY{n}{func}\PY{p}{,} \PY{n}{defaults}\PY{o}{=}\PY{k+kc}{None}\PY{p}{,} \PY{n}{verbose}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}\PY{p}{:}
+              \PY{n}{args}\PY{p}{,} \PY{n}{varargs}\PY{p}{,} \PY{n}{keywords}\PY{p}{,} \PY{n}{\PYZus{}defaults}\PY{p}{,} \PY{n}{kwonlyargs}\PY{p}{,} \PY{n}{kwonlydefaults}\PY{p}{,} \PY{n}{annotations} \PY{o}{=} \PY{n}{inspect}\PY{o}{.}\PY{n}{getfullargspec}\PY{p}{(}\PY{n}{func}\PY{p}{)}
+              \PY{n}{defaults} \PY{o}{=} \PY{n}{defaults} \PY{o+ow}{or} \PY{n}{\PYZus{}defaults}
+          
+              \PY{n}{params} \PY{o}{=} \PY{n}{Parameters}\PY{p}{(}\PY{p}{)}
+              
+              \PY{k}{if} \PY{n}{defaults} \PY{o+ow}{is} \PY{k+kc}{None}\PY{p}{:}
+                  \PY{k}{for} \PY{n}{arg} \PY{o+ow}{in} \PY{n}{args}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{:}\PY{p}{]}\PY{p}{:}
+                      \PY{n}{params}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{arg}\PY{p}{)}
+              \PY{k}{else}\PY{p}{:}
+                  \PY{n}{len\PYZus{}defaults} \PY{o}{=} \PY{n+nb}{len}\PY{p}{(}\PY{n}{defaults}\PY{p}{)}
+                  \PY{k}{for} \PY{n}{arg} \PY{o+ow}{in} \PY{n}{args}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{:}\PY{o}{\PYZhy{}}\PY{n}{len\PYZus{}defaults}\PY{p}{]}\PY{p}{:}
+                      \PY{n}{params}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{arg}\PY{p}{)}
+                  \PY{k}{for} \PY{n}{arg}\PY{p}{,} \PY{n}{default} \PY{o+ow}{in} \PY{n+nb}{zip}\PY{p}{(}\PY{n}{args}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{n}{len\PYZus{}defaults}\PY{p}{:}\PY{p}{]}\PY{p}{,} \PY{n}{defaults}\PY{p}{)}\PY{p}{:}
+                      \PY{n}{params}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{arg}\PY{p}{,} \PY{n}{value}\PY{o}{=}\PY{n}{default}\PY{p}{)}
+          
+              \PY{k}{if} \PY{n}{verbose}\PY{p}{:}
+                  \PY{n+nb}{print}\PY{p}{(}\PY{n}{params}\PY{p}{)}
+                  
+              \PY{k}{return} \PY{n}{params}
+          
+          
+          \PY{k}{def} \PY{n+nf}{mkdir}\PY{p}{(}\PY{n}{directory}\PY{p}{)}\PY{p}{:}
+              \PY{k}{try}\PY{p}{:}
+                  \PY{n}{os}\PY{o}{.}\PY{n}{makedirs}\PY{p}{(}\PY{n}{directory}\PY{p}{)}
+              \PY{k}{except} \PY{n+ne}{OSError} \PY{k}{as} \PY{n}{e}\PY{p}{:}
+                  \PY{k}{if} \PY{n}{e}\PY{o}{.}\PY{n}{errno} \PY{o}{!=} \PY{n}{errno}\PY{o}{.}\PY{n}{EEXIST}\PY{p}{:}
+                      \PY{k}{raise}
+          
+          
+          \PY{k}{def} \PY{n+nf}{plot\PYZus{}spectrofluorometer\PYZus{}data}\PY{p}{(}\PY{n}{ax}\PY{p}{,} \PY{n}{dataset}\PY{p}{,} \PY{n}{min\PYZus{}x}\PY{o}{=}\PY{k+kc}{None}\PY{p}{,} \PY{n}{max\PYZus{}x}\PY{o}{=}\PY{k+kc}{None}\PY{p}{,} \PY{n}{normalize}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{:}
+                  \PY{n}{title} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{name}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+                  \PY{n}{label} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{meta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Labels}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+                  \PY{n}{\PYZus{}x} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{p}{:}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}
+                  \PY{n}{\PYZus{}y} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{p}{:}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}
+                  \PY{n}{x} \PY{o}{=} \PY{n}{\PYZus{}x}\PY{p}{[}\PY{n}{\PYZus{}y} \PY{o}{!=} \PY{l+m+mi}{0}\PY{p}{]}
+                  \PY{n}{y} \PY{o}{=} \PY{n}{\PYZus{}y}\PY{p}{[}\PY{n}{\PYZus{}y} \PY{o}{!=} \PY{l+m+mi}{0}\PY{p}{]}
+                  \PY{n}{min\PYZus{}x} \PY{o}{=} \PY{n}{min\PYZus{}x} \PY{o+ow}{or} \PY{l+m+mi}{0}
+                  \PY{n}{max\PYZus{}x} \PY{o}{=} \PY{n}{max\PYZus{}x} \PY{o+ow}{or} \PY{n}{x}\PY{o}{.}\PY{n}{max}\PY{p}{(}\PY{p}{)}
+                  \PY{n}{idx} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{logical\PYZus{}and}\PY{p}{(}\PY{n}{x} \PY{o}{\PYZgt{}}\PY{o}{=} \PY{n}{min\PYZus{}x}\PY{p}{,} \PY{n}{x} \PY{o}{\PYZlt{}}\PY{o}{=} \PY{n}{max\PYZus{}x}\PY{p}{)}
+                  
+                  \PY{n}{x\PYZus{}label} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{meta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Xaxis}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+                  \PY{n}{y\PYZus{}label} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{meta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Yaxis}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+                  
+                  \PY{n}{normalize} \PY{o}{=} \PY{n}{normalize} \PY{o+ow}{or} \PY{l+m+mi}{1}
+          
+                  \PY{n}{ln} \PY{o}{=} \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{x}\PY{p}{[}\PY{n}{idx}\PY{p}{]}\PY{p}{,} \PY{n}{y}\PY{p}{[}\PY{n}{idx}\PY{p}{]}\PY{o}{/}\PY{n}{normalize}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{n}{label}\PY{p}{)}
+          
+                  \PY{c+c1}{\PYZsh{}cnps.legend(*lns)}
+          
+                  \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{n}{title}\PY{p}{)}
+                  \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{n}{x\PYZus{}label}\PY{p}{)}
+                  \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{n}{y\PYZus{}label}\PY{p}{)}
+                  
+                  \PY{k}{return} \PY{n}{ln}
+          
+          
+          \PY{k}{def} \PY{n+nf}{load\PYZus{}data}\PY{p}{(}\PY{n}{filename}\PY{p}{)}\PY{p}{:}
+              \PY{n}{absname} \PY{o}{=} \PY{n}{os}\PY{o}{.}\PY{n}{path}\PY{o}{.}\PY{n}{abspath}\PY{p}{(}\PY{n}{filename}\PY{p}{)}
+              \PY{n}{filename} \PY{o}{=} \PY{n}{os}\PY{o}{.}\PY{n}{path}\PY{o}{.}\PY{n}{basename}\PY{p}{(}\PY{n}{absname}\PY{p}{)}
+              \PY{n}{dirname} \PY{o}{=} \PY{n}{os}\PY{o}{.}\PY{n}{path}\PY{o}{.}\PY{n}{dirname}\PY{p}{(}\PY{n}{absname}\PY{p}{)}
+          
+              \PY{n}{header\PYZus{}lines} \PY{o}{=} \PY{l+m+mi}{2}
+              
+              \PY{c+c1}{\PYZsh{} Set the number of header lines before the actual data comes}
+              \PY{n}{header\PYZus{}lines\PYZus{}typ} \PY{o}{=} \PY{p}{\PYZob{}}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Kinetic Scan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mi}{9}\PY{p}{,}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Emission Scan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mi}{21}\PY{p}{,}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Excitation Scan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mi}{21}
+              \PY{p}{\PYZcb{}}
+              
+              \PY{c+c1}{\PYZsh{} Set the replacement of label names}
+              \PY{n}{replace\PYZus{}label} \PY{o}{=} \PY{p}{\PYZob{}}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time (s)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Wavelength}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Wavelength (nm)}\PY{l+s+s1}{\PYZsq{}}
+              \PY{p}{\PYZcb{}}
+          
+              \PY{c+c1}{\PYZsh{} read in metadata from the header of the measurement}
+              \PY{n}{meta} \PY{o}{=} \PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}
+              \PY{k}{with} \PY{n+nb}{open}\PY{p}{(}\PY{n}{absname}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{r}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)} \PY{k}{as} \PY{n}{f}\PY{p}{:}
+                  \PY{n}{reader} \PY{o}{=} \PY{n}{csv}\PY{o}{.}\PY{n}{reader}\PY{p}{(}\PY{n}{f}\PY{p}{)}
+                  \PY{n}{r} \PY{o}{=} \PY{l+m+mi}{0}
+                  \PY{k}{for} \PY{n}{row} \PY{o+ow}{in} \PY{n}{reader}\PY{p}{:}
+          
+                      \PY{n}{r} \PY{o}{+}\PY{o}{=} \PY{l+m+mi}{1}
+                      \PY{k}{if} \PY{n+nb}{len}\PY{p}{(}\PY{n}{row}\PY{p}{)} \PY{o}{\PYZgt{}}\PY{o}{=} \PY{l+m+mi}{2}\PY{p}{:}
+                          \PY{c+c1}{\PYZsh{} Read key and correspodning value}
+                          \PY{n}{key} \PY{o}{=} \PY{n}{row}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}
+                          \PY{n}{value} \PY{o}{=} \PY{n}{row}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}
+          
+                          \PY{c+c1}{\PYZsh{} Set number of header lines according to type of measurement }
+                          \PY{k}{if} \PY{n}{key} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+                              \PY{n}{header\PYZus{}lines} \PY{o}{=} \PY{n}{header\PYZus{}lines\PYZus{}typ}\PY{p}{[}\PY{n}{value}\PY{p}{]}
+                          
+                          \PY{c+c1}{\PYZsh{} Make only first character capital}
+                          \PY{k}{if} \PY{n}{key} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{XAxis}\PY{l+s+s1}{\PYZsq{}} \PY{o+ow}{or} \PY{n}{key} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{YAxis}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+                              \PY{n}{key} \PY{o}{=} \PY{n}{key}\PY{o}{.}\PY{n}{capitalize}\PY{p}{(}\PY{p}{)}
+          
+                          \PY{c+c1}{\PYZsh{} Try to convert value to a float}
+                          \PY{k}{try}\PY{p}{:}
+                              \PY{n}{value} \PY{o}{=} \PY{n+nb}{float}\PY{p}{(}\PY{n}{value}\PY{p}{)}
+                          \PY{k}{except}\PY{p}{:}
+                              \PY{k}{pass}
+          
+                          \PY{c+c1}{\PYZsh{} Store metadata}
+                          \PY{n}{meta}\PY{p}{[}\PY{n}{key}\PY{p}{]} \PY{o}{=} \PY{n}{value}
+          
+                      \PY{k}{if} \PY{n}{r} \PY{o}{\PYZgt{}}\PY{o}{=} \PY{n}{header\PYZus{}lines}\PY{p}{:}
+                          \PY{k}{if} \PY{n}{header\PYZus{}lines} \PY{o}{\PYZlt{}}\PY{o}{=} \PY{l+m+mi}{2}\PY{p}{:}
+                              \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type of file }\PY{l+s+si}{\PYZob{}\PYZcb{}}\PY{l+s+s1}{ unknown!}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{filepath}\PY{p}{)}\PY{p}{)}
+                              \PY{k}{return}
+                          \PY{k}{break}
+          
+              \PY{c+c1}{\PYZsh{} read in the data}
+              \PY{c+c1}{\PYZsh{}data = np.loadtxt(filepath, skiprows=5)}
+              \PY{c+c1}{\PYZsh{}data = lv.read\PYZus{}labview\PYZus{}bin\PYZus{}data(filepath)[:,0:3]}
+              \PY{n}{data} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{genfromtxt}\PY{p}{(}\PY{n}{absname}\PY{p}{,} \PY{n}{delimiter}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{,}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{skip\PYZus{}header}\PY{o}{=}\PY{n}{header\PYZus{}lines}\PY{p}{,} \PY{n}{invalid\PYZus{}raise}\PY{o}{=}\PY{k+kc}{False}\PY{p}{,} \PY{n}{usecols}\PY{o}{=}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}
+          
+              \PY{c+c1}{\PYZsh{} Convert ns to s}
+              \PY{k}{if} \PY{n}{meta}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Xaxis}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+                  \PY{n}{data}\PY{p}{[}\PY{p}{:}\PY{p}{,} \PY{l+m+mi}{0}\PY{p}{]} \PY{o}{*}\PY{o}{=} \PY{l+m+mf}{1e\PYZhy{}9}
+              
+              \PY{c+c1}{\PYZsh{} Change label of Xaxis}
+              \PY{n}{meta}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Xaxis}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{n}{replace\PYZus{}label}\PY{p}{[}\PY{n}{meta}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Xaxis}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}
+                  
+              \PY{n}{dataset} \PY{o}{=} \PY{p}{\PYZob{}}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{filename}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{filename}\PY{p}{,}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dirname}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{dirname}\PY{p}{,}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{name}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{filename}\PY{o}{.}\PY{n}{strip}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{.csv}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{meta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{meta}\PY{p}{,}
+                  \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{data}
+              \PY{p}{\PYZcb{}}
+              
+              \PY{k}{return} \PY{n}{dataset}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}399}]:} \PY{c+c1}{\PYZsh{} read in all datasets in a folder}
+          \PY{n}{path} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{/nfs/home/tobiasj/data/Spectrofluorometer/2018\PYZhy{}06\PYZhy{}27 \PYZhy{} annealing with Rad52}\PY{l+s+s1}{\PYZsq{}}
+          \PY{n}{datasets} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+          
+          \PY{k}{for} \PY{n}{root}\PY{p}{,} \PY{n}{dirs}\PY{p}{,} \PY{n}{files} \PY{o+ow}{in} \PY{n}{os}\PY{o}{.}\PY{n}{walk}\PY{p}{(}\PY{n}{path}\PY{p}{)}\PY{p}{:}
+              \PY{k}{if} \PY{n}{root}\PY{o}{.}\PY{n}{endswith}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{:}
+                  \PY{n}{files}\PY{o}{.}\PY{n}{sort}\PY{p}{(}\PY{p}{)}
+                  \PY{k}{for} \PY{n}{file} \PY{o+ow}{in} \PY{n}{files}\PY{p}{:}
+                      \PY{k}{if} \PY{n}{file}\PY{o}{.}\PY{n}{endswith}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{.csv}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{:}
+                          \PY{n}{filepath} \PY{o}{=} \PY{n}{os}\PY{o}{.}\PY{n}{path}\PY{o}{.}\PY{n}{join}\PY{p}{(}\PY{n}{root}\PY{p}{,} \PY{n}{file}\PY{p}{)}
+                          \PY{n}{dataset} \PY{o}{=} \PY{n}{load\PYZus{}data}\PY{p}{(}\PY{n}{filepath}\PY{p}{)}
+                          \PY{c+c1}{\PYZsh{}time = data[:,0] / meta[\PYZsq{}Step\PYZsq{}]}
+                          \PY{c+c1}{\PYZsh{}counts = data[:,1]}
+                          \PY{k}{if} \PY{n}{dataset} \PY{o+ow}{is} \PY{o+ow}{not} \PY{k+kc}{None}\PY{p}{:}
+                              \PY{n}{datasets}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{dataset}\PY{p}{)}
+          
+          \PY{c+c1}{\PYZsh{}datasets}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}400}]:} \PY{c+c1}{\PYZsh{} define functions to automatically detect regions in a fluorescence trace}
+          \PY{c+c1}{\PYZsh{}x = dataset[\PYZsq{}data\PYZsq{}][:,0]}
+          \PY{c+c1}{\PYZsh{}data = dataset[\PYZsq{}data\PYZsq{}][:,1]}
+          
+          \PY{k}{def} \PY{n+nf}{max\PYZus{}fluorescence}\PY{p}{(}\PY{n}{data}\PY{p}{,} \PY{n}{interval}\PY{o}{=}\PY{l+m+mf}{0.05}\PY{p}{)}\PY{p}{:}
+              \PY{n}{min\PYZus{}y} \PY{o}{=} \PY{n}{data}\PY{o}{.}\PY{n}{max}\PY{p}{(}\PY{p}{)} \PY{o}{*} \PY{p}{(}\PY{l+m+mi}{1} \PY{o}{\PYZhy{}} \PY{n}{interval}\PY{p}{)}
+              \PY{n}{max\PYZus{}y} \PY{o}{=} \PY{n}{data}\PY{o}{.}\PY{n}{max}\PY{p}{(}\PY{p}{)} \PY{o}{*} \PY{p}{(}\PY{l+m+mi}{1} \PY{o}{+} \PY{n}{interval}\PY{p}{)}
+              \PY{n}{idx} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{logical\PYZus{}and}\PY{p}{(}\PY{n}{data} \PY{o}{\PYZgt{}} \PY{n}{min\PYZus{}y}\PY{p}{,} \PY{n}{data} \PY{o}{\PYZlt{}} \PY{n}{max\PYZus{}y}\PY{p}{)}
+              \PY{n}{start} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argwhere}\PY{p}{(}\PY{n}{idx}\PY{p}{)}\PY{o}{.}\PY{n}{min}\PY{p}{(}\PY{p}{)}
+              \PY{n}{stop} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argwhere}\PY{p}{(}\PY{n}{idx}\PY{p}{)}\PY{o}{.}\PY{n}{max}\PY{p}{(}\PY{p}{)} \PY{o}{+} \PY{l+m+mi}{1}
+              \PY{n}{F0} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{median}\PY{p}{(}\PY{n}{data}\PY{p}{[}\PY{n}{start}\PY{p}{:}\PY{n}{stop}\PY{p}{]}\PY{p}{)}
+              \PY{k}{return} \PY{n}{F0}
+          
+          \PY{k}{def} \PY{n+nf}{decay\PYZus{}region}\PY{p}{(}\PY{n}{data}\PY{p}{,} \PY{n}{F0}\PY{o}{=}\PY{k+kc}{None}\PY{p}{,} \PY{n}{dilution}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{:}
+              \PY{n}{min\PYZus{}y} \PY{o}{=} \PY{l+m+mi}{0}
+              \PY{n}{max\PYZus{}y} \PY{o}{=} \PY{l+m+mi}{0}
+              \PY{n}{F0} \PY{o}{=} \PY{n}{F0} \PY{o+ow}{or} \PY{n}{max\PYZus{}fluorescence}\PY{p}{(}\PY{n}{data}\PY{p}{)}
+          
+              \PY{c+c1}{\PYZsh{} Determine the first fluorescence value after the fluorescence has bin diluted}
+              \PY{n}{start} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argwhere}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{logical\PYZus{}and}\PY{p}{(}\PY{n}{data} \PY{o}{\PYZgt{}} \PY{n}{F0}\PY{o}{/}\PY{n}{dilution} \PY{o}{*} \PY{l+m+mf}{0.95}\PY{p}{,} \PY{n}{data} \PY{o}{\PYZlt{}}\PY{o}{=} \PY{n}{F0}\PY{o}{/}\PY{n}{dilution}\PY{p}{)}\PY{p}{)}\PY{o}{.}\PY{n}{min}\PY{p}{(}\PY{p}{)}
+              \PY{n}{stop} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argwhere}\PY{p}{(}\PY{n}{data} \PY{o}{!=} \PY{l+m+mi}{0}\PY{p}{)}\PY{o}{.}\PY{n}{max}\PY{p}{(}\PY{p}{)} \PY{o}{+} \PY{l+m+mi}{1}
+              \PY{k}{return} \PY{n}{start}\PY{p}{,} \PY{n}{stop}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}403}]:} \PY{c+c1}{\PYZsh{} Plot individual dataset}
+          \PY{n}{index} \PY{o}{=} \PY{l+m+mi}{1}
+          
+          \PY{n}{plt}\PY{o}{.}\PY{n}{close}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{all}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+          
+          \PY{c+c1}{\PYZsh{} define the model function describing the data}
+          \PY{c+c1}{\PYZsh{} The first argument needs to be the independent variable (e.g. time)}
+          \PY{c+c1}{\PYZsh{} The following arguments are the dependent variables. A default value will be used as a start value for the fitting. }
+          \PY{k}{def} \PY{n+nf}{exponential}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{A}\PY{o}{=}\PY{l+m+mi}{10000}\PY{p}{,} \PY{n}{K}\PY{o}{=}\PY{o}{\PYZhy{}}\PY{l+m+mf}{0.001}\PY{p}{,} \PY{n}{C}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{:}
+              \PY{k}{return} \PY{n}{A} \PY{o}{*} \PY{n}{np}\PY{o}{.}\PY{n}{exp}\PY{p}{(}\PY{n}{K} \PY{o}{*} \PY{n}{t}\PY{p}{)} \PY{o}{+} \PY{n}{C}
+          \PY{k}{def} \PY{n+nf}{linear}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{m}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{,} \PY{n}{n}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{:}
+              \PY{k}{return} \PY{n}{m}\PY{o}{*}\PY{n}{t} \PY{o}{+} \PY{n}{n}
+          
+          \PY{k}{def} \PY{n+nf}{a}\PY{p}{(}\PY{n}{f}\PY{p}{,} \PY{n}{A0}\PY{p}{,} \PY{n}{B0}\PY{p}{)}\PY{p}{:}
+              \PY{k}{return} \PY{n}{f} \PY{o}{*} \PY{n}{B0}\PY{o}{/}\PY{n}{A0} \PY{o}{*} \PY{p}{(}\PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{B0}\PY{p}{)}
+          \PY{k}{def} \PY{n+nf}{b}\PY{p}{(}\PY{n}{A0}\PY{p}{,} \PY{n}{B0}\PY{p}{)}\PY{p}{:}
+              \PY{k}{return} \PY{n}{B0} \PY{o}{/} \PY{n}{A0}
+          \PY{k}{def} \PY{n+nf}{ke}\PY{p}{(}\PY{n}{A0}\PY{p}{,} \PY{n}{B0}\PY{p}{,} \PY{n}{k}\PY{p}{)}\PY{p}{:}
+              \PY{k}{return} \PY{p}{(}\PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{B0}\PY{p}{)} \PY{o}{*} \PY{n}{k}
+          \PY{k}{def} \PY{n+nf}{F}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{B0}\PY{o}{=}\PY{l+m+mf}{1e\PYZhy{}9}\PY{p}{,} \PY{n}{f}\PY{o}{=}\PY{l+m+mi}{10000}\PY{p}{,} \PY{n}{k}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{:}
+              \PY{c+c1}{\PYZsh{} See Marcel Ander 2011}
+              \PY{n}{A0} \PY{o}{=} \PY{l+m+mf}{0.66}\PY{o}{/}\PY{l+m+mi}{199}\PY{o}{*}\PY{l+m+mi}{200}\PY{o}{/}\PY{l+m+mi}{200}\PY{o}{*}\PY{l+m+mi}{195}\PY{o}{*}\PY{l+m+mf}{1e\PYZhy{}9}  \PY{c+c1}{\PYZsh{} total volume 199 instead of 200 µl, only taken 195 µl instead of 200 µl: 0.65 nM}
+              \PY{c+c1}{\PYZsh{}B0 = 1/394*400*1e\PYZhy{}9  \PYZsh{} total volume 394 instead of 400 µl: 1.02 nM}
+              \PY{c+c1}{\PYZsh{}C = 0}
+              \PY{k}{return} \PY{n}{a}\PY{p}{(}\PY{n}{f}\PY{p}{,} \PY{n}{A0}\PY{p}{,} \PY{n}{B0}\PY{p}{)} \PY{o}{/} \PY{p}{(}\PY{n}{exp}\PY{p}{(}\PY{n}{ke}\PY{p}{(}\PY{n}{A0}\PY{p}{,} \PY{n}{B0}\PY{p}{,} \PY{n}{k}\PY{p}{)} \PY{o}{*} \PY{n}{t}\PY{p}{)} \PY{o}{\PYZhy{}} \PY{n}{b}\PY{p}{(}\PY{n}{A0}\PY{p}{,} \PY{n}{B0}\PY{p}{)}\PY{p}{)} \PY{c+c1}{\PYZsh{}\PYZhy{} C) / (1 \PYZhy{} C)}
+          
+          \PY{n}{model\PYZus{}func} \PY{o}{=} \PY{n}{exponential}
+          \PY{n}{model\PYZus{}func} \PY{o}{=} \PY{n}{linear}
+          \PY{n}{model\PYZus{}func} \PY{o}{=} \PY{n}{F}
+          
+          \PY{n}{outs} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+          \PY{k}{with} \PY{n}{cnps}\PY{o}{.}\PY{n}{cn\PYZus{}plot}\PY{p}{(}\PY{n}{context}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{paper}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{dark}\PY{o}{=}\PY{k+kc}{False}\PY{p}{,} \PY{n}{usetex}\PY{o}{=}\PY{k+kc}{False}\PY{p}{)} \PY{k}{as} \PY{n}{cnp}\PY{p}{:}
+              \PY{n}{fig} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{p}{)}
+              \PY{n}{ax} \PY{o}{=} \PY{n}{host\PYZus{}subplot}\PY{p}{(}\PY{l+m+mi}{111}\PY{p}{)}
+              
+              \PY{n}{fig2}\PY{p}{,} \PY{n}{ax2} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{subplots}\PY{p}{(}\PY{p}{)}
+              
+              \PY{c+c1}{\PYZsh{}ax2 = ax.twinx()}
+              
+              \PY{n}{lns} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+              \PY{k}{for} \PY{n}{dataset} \PY{o+ow}{in} \PY{n}{datasets}\PY{p}{[}\PY{p}{:}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{:}
+                  \PY{n}{data} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{p}{:}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}
+                  \PY{n}{Fmax} \PY{o}{=} \PY{n}{max\PYZus{}fluorescence}\PY{p}{(}\PY{n}{data}\PY{p}{)} \PY{o}{*} \PY{l+m+mi}{199} \PY{o}{/} \PY{l+m+mi}{394}  \PY{c+c1}{\PYZsh{} diluted 199 µl to final volume of 394 µl}
+                  \PY{n}{start}\PY{p}{,} \PY{n}{stop} \PY{o}{=} \PY{n}{decay\PYZus{}region}\PY{p}{(}\PY{n}{data}\PY{p}{)}
+                  \PY{n}{x} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{p}{:}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{start}\PY{p}{:}\PY{n}{stop}\PY{p}{]}
+                  \PY{n}{y} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{p}{:}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{start}\PY{p}{:}\PY{n}{stop}\PY{p}{]} \PY{c+c1}{\PYZsh{}/ (F0 * 199 / 394)}
+                  
+                  \PY{c+c1}{\PYZsh{} Set first datapoint to time 0 + 30 s (\PYZti{} duration needed for mixing)}
+                  \PY{n}{x} \PY{o}{=} \PY{n}{x} \PY{o}{\PYZhy{}} \PY{n}{x}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]} \PY{o}{+} \PY{l+m+mi}{10}
+                  
+                  \PY{c+c1}{\PYZsh{} select the first seconds}
+                  \PY{n}{duration} \PY{o}{=} \PY{l+m+mi}{4000}  \PY{c+c1}{\PYZsh{} s}
+                  \PY{n}{x} \PY{o}{=} \PY{n}{x}\PY{p}{[}\PY{p}{:}\PY{n+nb}{int}\PY{p}{(}\PY{n}{duration} \PY{o}{/} \PY{l+m+mi}{10}\PY{p}{)}\PY{p}{]}
+                  \PY{n}{y} \PY{o}{=} \PY{n}{y}\PY{p}{[}\PY{p}{:}\PY{n+nb}{int}\PY{p}{(}\PY{n}{duration} \PY{o}{/} \PY{l+m+mi}{10}\PY{p}{)}\PY{p}{]}
+          
+                  \PY{c+c1}{\PYZsh{} get the label for this dataset}
+                  \PY{n}{label} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{name}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{replace}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZus{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ }\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{replace}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{1st}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{replace}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{2nd}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+                  \PY{c+c1}{\PYZsh{}label = dataset[\PYZsq{}meta\PYZsq{}][\PYZsq{}Labels\PYZsq{}]}
+                  
+                  \PY{c+c1}{\PYZsh{} get the color for this dataset}
+                  \PY{n}{c} \PY{o}{=} \PY{n}{cnp}\PY{o}{.}\PY{n}{color}
+                  
+                  \PY{c+c1}{\PYZsh{} Fit the data}
+                  \PY{n}{params} \PY{o}{=} \PY{n}{create\PYZus{}params}\PY{p}{(}\PY{n}{model\PYZus{}func}\PY{p}{)}\PY{c+c1}{\PYZsh{}, defaults=(16000, \PYZhy{}0.0005, 2000))}
+                  \PY{n}{out} \PY{o}{=} \PY{n}{minimize}\PY{p}{(}\PY{n}{residual}\PY{p}{,} \PY{n}{params}\PY{p}{,} \PY{n}{args}\PY{o}{=}\PY{p}{(}\PY{n}{model\PYZus{}func}\PY{p}{,} \PY{n}{x}\PY{p}{,} \PY{n}{y}\PY{p}{)}\PY{p}{)}
+                  \PY{n}{outs}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{out}\PY{p}{)}
+                  \PY{n+nb}{print}\PY{p}{(}\PY{n}{fit\PYZus{}report}\PY{p}{(}\PY{n}{out}\PY{p}{)}\PY{p}{)}
+                  
+                  \PY{c+c1}{\PYZsh{} Calculate and print all relevant infos from the fit}
+                  \PY{n}{A0} \PY{o}{=} \PY{l+m+mf}{0.66}\PY{o}{/}\PY{l+m+mi}{199}\PY{o}{*}\PY{l+m+mi}{200}\PY{o}{/}\PY{l+m+mi}{200}\PY{o}{*}\PY{l+m+mi}{195}\PY{o}{*}\PY{l+m+mf}{1e\PYZhy{}9}  \PY{c+c1}{\PYZsh{} total volume 199 instead of 200 µl, only taken 195 µl instead of 200 µl: 0.65 nM}
+                  \PY{n}{B0i} \PY{o}{=} \PY{l+m+mi}{1}\PY{o}{/}\PY{l+m+mi}{394}\PY{o}{*}\PY{l+m+mi}{400}\PY{o}{*}\PY{l+m+mf}{1e\PYZhy{}9}  \PY{c+c1}{\PYZsh{} total volume 394 instead of 400 µl: 1.02 nM}
+                  \PY{n}{B0f} \PY{o}{=} \PY{n}{out}\PY{o}{.}\PY{n}{params}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{B0}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value} \PY{c+c1}{\PYZsh{}* B0}
+                  \PY{n}{kf} \PY{o}{=} \PY{n}{out}\PY{o}{.}\PY{n}{params}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{k}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value}
+                  \PY{n}{f} \PY{o}{=} \PY{n}{out}\PY{o}{.}\PY{n}{params}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{f}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value}
+          
+                  \PY{n}{a\PYZus{}} \PY{o}{=} \PY{n}{f} \PY{o}{*} \PY{n}{B0f} \PY{o}{/} \PY{n}{A0} \PY{o}{*} \PY{p}{(}\PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{B0f}\PY{p}{)}
+                  \PY{n}{b\PYZus{}} \PY{o}{=} \PY{n}{B0f} \PY{o}{/} \PY{n}{A0}
+                  \PY{n}{ke\PYZus{}} \PY{o}{=} \PY{p}{(}\PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{B0f}\PY{p}{)} \PY{o}{*} \PY{n}{kf}
+          
+                  \PY{c+c1}{\PYZsh{}\PYZsh{}F0 = residual(outs[i].params, model\PYZus{}func, 0)}
+                  \PY{c+c1}{\PYZsh{}\PYZsh{}Finf = residual(outs[i].params, model\PYZus{}func, np.inf)}
+                  \PY{n}{F0} \PY{o}{=} \PY{n}{a\PYZus{}} \PY{o}{/} \PY{p}{(}\PY{l+m+mi}{1} \PY{o}{\PYZhy{}} \PY{n}{b\PYZus{}}\PY{p}{)}
+                  \PY{n}{Finf} \PY{o}{=} \PY{o}{\PYZhy{}} \PY{n}{a\PYZus{}} \PY{o}{/} \PY{n}{b\PYZus{}}
+          
+                  \PY{c+c1}{\PYZsh{}B0e = B0i / b\PYZus{}  \PYZsh{} ???}
+                  \PY{n}{B0e} \PY{o}{=} \PY{n}{B0f}
+                  \PY{c+c1}{\PYZsh{}k = ke\PYZus{} / (A0 \PYZhy{} B0e)  \PYZsh{} ???}
+                  \PY{n}{k} \PY{o}{=} \PY{n}{kf}
+                  \PY{n}{t12} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{b\PYZus{}} \PY{o}{/} \PY{p}{(}\PY{l+m+mi}{2} \PY{o}{*} \PY{n}{b\PYZus{}} \PY{o}{\PYZhy{}} \PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)} \PY{o}{/} \PY{n}{ke\PYZus{}}
+          
+                  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reactive ssDNA: }\PY{l+s+si}{\PYZob{}:.1\PYZpc{}\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{B0e} \PY{o}{/} \PY{n}{B0i}\PY{p}{)}\PY{p}{)}
+                  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{F0: }\PY{l+s+si}{\PYZob{}:.0f\PYZcb{}}\PY{l+s+s1}{ \PYZhy{}\PYZgt{} Finf: }\PY{l+s+si}{\PYZob{}:.0f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{F0}\PY{p}{,} \PY{n}{Finf}\PY{p}{)}\PY{p}{)}
+                  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Fmax: }\PY{l+s+si}{\PYZob{}:.0f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{Fmax}\PY{p}{)}\PY{p}{)}
+                  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{kf: }\PY{l+s+si}{\PYZob{}:.2e\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{kf}\PY{p}{)}\PY{p}{)}
+                  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ke: }\PY{l+s+si}{\PYZob{}:.2e\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{ke\PYZus{}}\PY{p}{)}\PY{p}{)}
+                  \PY{c+c1}{\PYZsh{}print(\PYZsq{}k: \PYZob{}:.2e\PYZcb{}\PYZsq{}.format(k))}
+                  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{t12: }\PY{l+s+si}{\PYZob{}:.1f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{t12}\PY{p}{)}\PY{p}{)}
+                  
+                  \PY{c+c1}{\PYZsh{} Plot the data and the fit}
+                  \PY{n}{lns}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{x}\PY{p}{[}\PY{p}{:}\PY{p}{:}\PY{l+m+mi}{5}\PY{p}{]}\PY{p}{,} \PY{p}{(}\PY{n}{y}\PY{p}{[}\PY{p}{:}\PY{p}{:}\PY{l+m+mi}{5}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{Finf}\PY{p}{)} \PY{o}{/} \PY{p}{(}\PY{n}{F0} \PY{o}{\PYZhy{}} \PY{n}{Finf}\PY{p}{)}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{n}{label}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{n}{c}\PY{p}{)}\PY{p}{)}
+                  \PY{n}{lns}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{x}\PY{p}{[}\PY{p}{:}\PY{p}{:}\PY{l+m+mi}{5}\PY{p}{]}\PY{p}{,} \PY{p}{(}\PY{n}{residual}\PY{p}{(}\PY{n}{out}\PY{o}{.}\PY{n}{params}\PY{p}{,} \PY{n}{model\PYZus{}func}\PY{p}{,} \PY{n}{x}\PY{p}{)}\PY{p}{[}\PY{p}{:}\PY{p}{:}\PY{l+m+mi}{5}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{Finf}\PY{p}{)} \PY{o}{/} \PY{p}{(}\PY{n}{F0} \PY{o}{\PYZhy{}} \PY{n}{Finf}\PY{p}{)}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{fit}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{n}{c}\PY{p}{)}\PY{p}{)}
+                  
+                  \PY{c+c1}{\PYZsh{} Plot the slope (reaction time) according to Marangone 2003}
+                  \PY{k}{def} \PY{n+nf}{change}\PY{p}{(}\PY{n}{A0}\PY{p}{,} \PY{n}{B0}\PY{p}{,} \PY{n}{At}\PY{p}{,} \PY{n}{Bt}\PY{p}{)}\PY{p}{:}
+                      \PY{k}{return} \PY{l+m+mi}{1} \PY{o}{/} \PY{p}{(}\PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{B0}\PY{p}{)} \PY{o}{*} \PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{B0} \PY{o}{*} \PY{n}{At} \PY{o}{/} \PY{p}{(}\PY{n}{A0} \PY{o}{*} \PY{n}{Bt}\PY{p}{)}\PY{p}{)}
+                  
+                  \PY{c+c1}{\PYZsh{} Maximum amount of product (i.e. dsDNA) at t=inf is min(A0, B0) = A0}
+                  \PY{c+c1}{\PYZsh{} Amount of product at t=0 is A0 * 0}
+                  \PY{c+c1}{\PYZsh{} Amount of product at t=inf is A0 * 1}
+                  \PY{c+c1}{\PYZsh{} Percent of reacted A0 is (y \PYZhy{} Finf) / (Fmax/2 \PYZhy{} Finf)}
+                  \PY{n}{Pt} \PY{o}{=} \PY{n}{A0} \PY{o}{*} \PY{p}{(}\PY{l+m+mi}{1} \PY{o}{\PYZhy{}} \PY{p}{(}\PY{n}{y} \PY{o}{\PYZhy{}} \PY{n}{Finf}\PY{p}{)} \PY{o}{/} \PY{p}{(}\PY{n}{Fmax} \PY{o}{\PYZhy{}} \PY{n}{Finf}\PY{p}{)}\PY{p}{)}
+                  \PY{n}{ax2}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{x}\PY{p}{[}\PY{p}{:}\PY{p}{:}\PY{l+m+mi}{5}\PY{p}{]}\PY{p}{,} \PY{n}{change}\PY{p}{(}\PY{n}{B0i}\PY{p}{,} \PY{n}{A0}\PY{p}{,} \PY{n}{B0i} \PY{o}{\PYZhy{}} \PY{n}{Pt}\PY{p}{,} \PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{Pt}\PY{p}{)}\PY{p}{[}\PY{p}{:}\PY{p}{:}\PY{l+m+mi}{5}\PY{p}{]}\PY{p}{)}
+              
+              \PY{n}{cnps}\PY{o}{.}\PY{n}{legend}\PY{p}{(}\PY{o}{*}\PY{n}{lns}\PY{p}{)}
+          
+              \PY{n}{title} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Annealing with and without Rad52}\PY{l+s+s1}{\PYZsq{}}
+              \PY{n}{x\PYZus{}label} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{meta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Xaxis}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+              \PY{c+c1}{\PYZsh{}y\PYZus{}label = dataset[\PYZsq{}meta\PYZsq{}][\PYZsq{}Yaxis\PYZsq{}]}
+              \PY{n}{y\PYZus{}label} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reactive ssDNA (}\PY{l+s+s1}{\PYZpc{}}\PY{l+s+s1}{)}\PY{l+s+s1}{\PYZsq{}}
+          
+              \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{n}{title}\PY{p}{)}
+              \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{n}{x\PYZus{}label}\PY{p}{)}
+              \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{n}{y\PYZus{}label}\PY{p}{)}
+              
+              \PY{n}{ax2}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Changes in reactant concentration}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+              \PY{n}{ax2}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{n}{x\PYZus{}label}\PY{p}{)}
+              \PY{n}{ax2}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{1/[Reactive ssDNA]}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+          
+              \PY{n}{fig}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+              
+              \PY{n}{fig2}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+Parameters([('B0', <Parameter 'B0', 1e-09, bounds=[-inf:inf]>), ('f', <Parameter 'f', 10000, bounds=[-inf:inf]>), ('k', <Parameter 'k', 1, bounds=[-inf:inf]>)])
+[[Fit Statistics]]
+    \# function evals   = 1244
+    \# data points      = 400
+    \# variables        = 3
+    chi-square         = 117780.035
+    reduced chi-square = 296.675
+    Akaike info crit   = 2280.044
+    Bayesian info crit = 2292.018
+[[Variables]]
+    B0:   1.1814e-09 +/- 9.61e-13 (0.08\%) (init= 1e-09)
+    f:    1.0790e+13 +/- 8.27e+09 (0.08\%) (init= 10000)
+    k:    6.3088e+05 +/- 1.19e+03 (0.19\%) (init= 1)
+[[Correlations]] (unreported correlations are <  0.100)
+    C(B0, f)                     = -0.926 
+    C(B0, k)                     =  0.691 
+    C(f, k)                      = -0.385 
+Reactive ssDNA: 116.4\%
+F0: 12748 -> Finf: 5769
+Fmax: 13064
+kf: 6.31e+05
+ke: -3.37e-04
+t12: 1106.8
+Parameters([('B0', <Parameter 'B0', 1e-09, bounds=[-inf:inf]>), ('f', <Parameter 'f', 10000, bounds=[-inf:inf]>), ('k', <Parameter 'k', 1, bounds=[-inf:inf]>)])
+[[Fit Statistics]]
+    \# function evals   = 1607
+    \# data points      = 400
+    \# variables        = 3
+    chi-square         = 33709.482
+    reduced chi-square = 84.911
+    Akaike info crit   = 1779.628
+    Bayesian info crit = 1791.602
+[[Variables]]
+    B0:   7.7085e-10 +/- 3.07e-12 (0.40\%) (init= 1e-09)
+    f:    2.1591e+13 +/- 8.45e+10 (0.39\%) (init= 10000)
+    k:    1.8726e+05 +/- 223.7022 (0.12\%) (init= 1)
+[[Correlations]] (unreported correlations are <  0.100)
+    C(B0, f)                     = -1.000 
+    C(B0, k)                     =  0.947 
+    C(f, k)                      = -0.942 
+Reactive ssDNA: 75.9\%
+F0: 16644 -> Finf: 2680
+Fmax: 17013
+kf: 1.87e+05
+ke: -2.32e-05
+t12: 6423.3
+
+    \end{Verbatim}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+/usr/lib/python3/dist-packages/matplotlib/\_\_init\_\_.py:943: MatplotlibDeprecationWarning: nbagg.transparent is deprecated and ignored. Use figure.facecolor instead.
+  mplDeprecation)
+
+    \end{Verbatim}
+
+    
+    \begin{verbatim}
+FigureCanvasNbAgg()
+    \end{verbatim}
+
+    
+    
+    \begin{verbatim}
+FigureCanvasNbAgg()
+    \end{verbatim}
+
+    
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}319}]:} \PY{c+c1}{\PYZsh{}The reaction half times in absence of Redβ are 541 s for the restricted fit, and 396 s for the free fit.}
+          \PY{n}{i} \PY{o}{=} \PY{l+m+mi}{1}
+          
+          \PY{n}{A0} \PY{o}{=} \PY{l+m+mf}{0.66}\PY{o}{/}\PY{l+m+mi}{199}\PY{o}{*}\PY{l+m+mi}{200}\PY{o}{/}\PY{l+m+mi}{200}\PY{o}{*}\PY{l+m+mi}{195}\PY{o}{*}\PY{l+m+mf}{1e\PYZhy{}9}  \PY{c+c1}{\PYZsh{} total volume 199 instead of 200 µl, only taken 195 µl instead of 200 µl: 0.65 nM}
+          \PY{n}{B0i} \PY{o}{=} \PY{l+m+mi}{1}\PY{o}{/}\PY{l+m+mi}{394}\PY{o}{*}\PY{l+m+mi}{400}\PY{o}{*}\PY{l+m+mf}{1e\PYZhy{}9}  \PY{c+c1}{\PYZsh{} total volume 394 instead of 400 µl: 1.02 nM}
+          \PY{n}{B0f} \PY{o}{=} \PY{n}{outs}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{.}\PY{n}{params}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{B0}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value} \PY{c+c1}{\PYZsh{}* B0}
+          \PY{n}{kf} \PY{o}{=} \PY{n}{outs}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{.}\PY{n}{params}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{k}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value}
+          \PY{n}{f} \PY{o}{=} \PY{n}{outs}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{.}\PY{n}{params}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{f}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+          
+          \PY{n}{a\PYZus{}} \PY{o}{=} \PY{n}{f} \PY{o}{*} \PY{n}{B0f} \PY{o}{/} \PY{n}{A0} \PY{o}{*} \PY{p}{(}\PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{B0f}\PY{p}{)}
+          \PY{n}{b\PYZus{}} \PY{o}{=} \PY{n}{B0f} \PY{o}{/} \PY{n}{A0}
+          \PY{n}{ke\PYZus{}} \PY{o}{=} \PY{p}{(}\PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{B0f}\PY{p}{)} \PY{o}{*} \PY{n}{kf}
+          
+          \PY{c+c1}{\PYZsh{}\PYZsh{}F0 = residual(outs[i].params, model\PYZus{}func, 0)}
+          \PY{c+c1}{\PYZsh{}\PYZsh{}Finf = residual(outs[i].params, model\PYZus{}func, np.inf)}
+          \PY{n}{F0} \PY{o}{=} \PY{n}{a\PYZus{}} \PY{o}{/} \PY{p}{(}\PY{l+m+mi}{1} \PY{o}{\PYZhy{}} \PY{n}{b\PYZus{}}\PY{p}{)}
+          \PY{n}{Finf} \PY{o}{=} \PY{o}{\PYZhy{}} \PY{n}{a\PYZus{}} \PY{o}{/} \PY{n}{b\PYZus{}}
+          
+          \PY{n}{B0e} \PY{o}{=} \PY{n}{B0i} \PY{o}{/} \PY{n}{b\PYZus{}}
+          \PY{n}{k} \PY{o}{=} \PY{n}{ke\PYZus{}} \PY{o}{/} \PY{p}{(}\PY{n}{A0} \PY{o}{\PYZhy{}} \PY{n}{B0e}\PY{p}{)}
+          \PY{n}{t12} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{b\PYZus{}} \PY{o}{/} \PY{p}{(}\PY{l+m+mi}{2} \PY{o}{*} \PY{n}{b\PYZus{}} \PY{o}{\PYZhy{}} \PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)} \PY{o}{/} \PY{n}{ke\PYZus{}}
+          
+          \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reactive ssDNA: }\PY{l+s+si}{\PYZob{}:.1\PYZpc{}\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{B0e}\PY{o}{/}\PY{n}{B0i}\PY{p}{)}\PY{p}{)}
+          \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{F0: }\PY{l+s+si}{\PYZob{}:.0f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{F0}\PY{p}{)}\PY{p}{)}
+          \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Finf: }\PY{l+s+si}{\PYZob{}:.0f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{Finf}\PY{p}{)}\PY{p}{)}
+          \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{kf: }\PY{l+s+si}{\PYZob{}:.2e\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{kf}\PY{p}{)}\PY{p}{)}
+          \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ke: }\PY{l+s+si}{\PYZob{}:.2e\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{ke\PYZus{}}\PY{p}{)}\PY{p}{)}
+          \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{k: }\PY{l+s+si}{\PYZob{}:.0f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{k}\PY{p}{)}\PY{p}{)}
+          \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{t12: }\PY{l+s+si}{\PYZob{}:.1f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{t12}\PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+Reactive ssDNA: 83.9\%
+F0: 16623
+Finf: 2680
+kf: 1.87e+05
+ke: -2.32e-05
+k: 113468
+t12: 6430.6
+
+    \end{Verbatim}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}92}]:} \PY{c+c1}{\PYZsh{} Get the data to be fitted}
+         \PY{n}{index} \PY{o}{=} \PY{l+m+mi}{1}
+         \PY{n}{dataset} \PY{o}{=} \PY{n}{datasets}\PY{p}{[}\PY{n}{index}\PY{p}{]}
+         
+         \PY{n}{min\PYZus{}x} \PY{o}{=} \PY{l+m+mi}{1000}
+         \PY{n}{max\PYZus{}x} \PY{o}{=} \PY{l+m+mi}{40000}
+         \PY{n}{x} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{p}{:}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}
+         \PY{n}{data} \PY{o}{=} \PY{n}{dataset}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{p}{:}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}
+         \PY{n}{idx} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{logical\PYZus{}and}\PY{p}{(}\PY{n}{x} \PY{o}{\PYZgt{}}\PY{o}{=} \PY{n}{min\PYZus{}x}\PY{p}{,} \PY{n}{x} \PY{o}{\PYZlt{}}\PY{o}{=} \PY{n}{max\PYZus{}x}\PY{p}{)}
+         \PY{n}{x} \PY{o}{=} \PY{n}{x}\PY{p}{[}\PY{n}{idx}\PY{p}{]}
+         \PY{n}{data} \PY{o}{=} \PY{n}{data}\PY{p}{[}\PY{n}{idx}\PY{p}{]}
+         
+         
+         \PY{c+c1}{\PYZsh{} define the model function describing the data}
+         \PY{c+c1}{\PYZsh{} The first argument needs to be the independent variable (e.g. time)}
+         \PY{c+c1}{\PYZsh{} The following arguments are the dependent variables. A default value will be used as a start value for the fitting. }
+         \PY{k}{def} \PY{n+nf}{exponential}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{A}\PY{o}{=}\PY{l+m+mi}{10000}\PY{p}{,} \PY{n}{K}\PY{o}{=}\PY{o}{\PYZhy{}}\PY{l+m+mf}{0.001}\PY{p}{,} \PY{n}{C}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{:}
+             \PY{k}{return} \PY{n}{A} \PY{o}{*} \PY{n}{np}\PY{o}{.}\PY{n}{exp}\PY{p}{(}\PY{n}{K} \PY{o}{*} \PY{n}{t}\PY{p}{)} \PY{o}{+} \PY{n}{C}
+         \PY{n}{model\PYZus{}func} \PY{o}{=} \PY{n}{exponential}
+         
+         
+         \PY{c+c1}{\PYZsh{} Fit the data}
+         \PY{n}{params} \PY{o}{=} \PY{n}{create\PYZus{}params}\PY{p}{(}\PY{n}{model\PYZus{}func}\PY{p}{)}\PY{c+c1}{\PYZsh{}, defaults=(16000, \PYZhy{}0.0005, 2000))}
+         \PY{n}{out} \PY{o}{=} \PY{n}{minimize}\PY{p}{(}\PY{n}{residual}\PY{p}{,} \PY{n}{params}\PY{p}{,} \PY{n}{args}\PY{o}{=}\PY{p}{(}\PY{n}{model\PYZus{}func}\PY{p}{,} \PY{n}{x}\PY{p}{,} \PY{n}{data}\PY{p}{)}\PY{p}{)}
+         \PY{n+nb}{print}\PY{p}{(}\PY{n}{fit\PYZus{}report}\PY{p}{(}\PY{n}{out}\PY{p}{)}\PY{p}{)}
+         
+         
+         \PY{c+c1}{\PYZsh{} Plot the data and the fit}
+         \PY{n}{plt}\PY{o}{.}\PY{n}{close}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{all}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+         \PY{k}{with} \PY{n}{cnps}\PY{o}{.}\PY{n}{cn\PYZus{}plot}\PY{p}{(}\PY{n}{context}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{notebook}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{dark}\PY{o}{=}\PY{k+kc}{False}\PY{p}{,} \PY{n}{right\PYZus{}spine}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}\PY{p}{:}
+             \PY{n}{fig} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{p}{)}
+             \PY{n}{ax} \PY{o}{=} \PY{n}{host\PYZus{}subplot}\PY{p}{(}\PY{l+m+mi}{111}\PY{p}{)}
+             \PY{n}{lns1} \PY{o}{=} \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{x}\PY{p}{,} \PY{n}{data}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+             \PY{n}{cnps}\PY{o}{.}\PY{n}{set\PYZus{}axis\PYZus{}color}\PY{p}{(}\PY{p}{)}
+         
+             \PY{n}{ax2} \PY{o}{=} \PY{n}{ax}\PY{o}{.}\PY{n}{twinx}\PY{p}{(}\PY{p}{)}
+             \PY{n}{lns2} \PY{o}{=} \PY{n}{ax2}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{x}\PY{p}{,} \PY{n}{residual}\PY{p}{(}\PY{n}{out}\PY{o}{.}\PY{n}{params}\PY{p}{,} \PY{n}{model\PYZus{}func}\PY{p}{,} \PY{n}{x}\PY{p}{)}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{fit}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+             \PY{n}{cnps}\PY{o}{.}\PY{n}{set\PYZus{}axis\PYZus{}color}\PY{p}{(}\PY{n}{ax}\PY{o}{=}\PY{n}{ax2}\PY{p}{)}
+         
+             \PY{n}{cnps}\PY{o}{.}\PY{n}{legend}\PY{p}{(}\PY{n}{lns1}\PY{p}{,} \PY{n}{lns2}\PY{p}{)}
+         
+             \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Example fit of an exponentail decay}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+             \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time (s)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+             \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Counts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+             \PY{n}{ax2}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Counts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+             
+             \PY{n}{fig}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+Parameters([('A', <Parameter 'A', 10000, bounds=[-inf:inf]>), ('K', <Parameter 'K', -0.001, bounds=[-inf:inf]>), ('C', <Parameter 'C', 0, bounds=[-inf:inf]>)])
+[[Fit Statistics]]
+    \# function evals   = 36
+    \# data points      = 3901
+    \# variables        = 3
+    chi-square         = 84336833.289
+    reduced chi-square = 21635.924
+    Akaike info crit   = 38943.211
+    Bayesian info crit = 38962.018
+[[Variables]]
+    A:   11761.2871 +/- 11.68462 (0.10\%) (init= 10000)
+    K:  -0.00010331 +/- 2.36e-07 (0.23\%) (init=-0.001)
+    C:   4000.12059 +/- 5.847643 (0.15\%) (init= 0)
+[[Correlations]] (unreported correlations are <  0.100)
+    C(K, C)                      = -0.830 
+    C(A, K)                      = -0.477 
+
+    \end{Verbatim}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+/usr/lib/python3/dist-packages/matplotlib/\_\_init\_\_.py:943: MatplotlibDeprecationWarning: nbagg.transparent is deprecated and ignored. Use figure.facecolor instead.
+  mplDeprecation)
+
+    \end{Verbatim}
+
+    
+    \begin{verbatim}
+FigureCanvasNbAgg()
+    \end{verbatim}
+
+    
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}4}]:} \PY{c+c1}{\PYZsh{} see https://stackoverflow.com/questions/3938042/fitting\PYZhy{}exponential\PYZhy{}decay\PYZhy{}with\PYZhy{}no\PYZhy{}initial\PYZhy{}guessing\PYZsh{}3938548}
+        \PY{k}{def} \PY{n+nf}{main}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+            \PY{c+c1}{\PYZsh{} Actual parameters}
+            \PY{n}{A0}\PY{p}{,} \PY{n}{K0}\PY{p}{,} \PY{n}{C0} \PY{o}{=} \PY{l+m+mf}{2.5}\PY{p}{,} \PY{o}{\PYZhy{}}\PY{l+m+mf}{4.0}\PY{p}{,} \PY{l+m+mf}{2.0}
+        
+            \PY{c+c1}{\PYZsh{} Generate some data based on these}
+            \PY{n}{tmin}\PY{p}{,} \PY{n}{tmax} \PY{o}{=} \PY{l+m+mi}{0}\PY{p}{,} \PY{l+m+mf}{0.5}
+            \PY{n}{num} \PY{o}{=} \PY{l+m+mi}{20}
+            \PY{n}{t} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{linspace}\PY{p}{(}\PY{n}{tmin}\PY{p}{,} \PY{n}{tmax}\PY{p}{,} \PY{n}{num}\PY{p}{)}
+            \PY{n}{y} \PY{o}{=} \PY{n}{model\PYZus{}func}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{A0}\PY{p}{,} \PY{n}{K0}\PY{p}{,} \PY{n}{C0}\PY{p}{)}
+        
+            \PY{c+c1}{\PYZsh{} Add noise}
+            \PY{n}{noisy\PYZus{}y} \PY{o}{=} \PY{n}{y} \PY{o}{+} \PY{l+m+mf}{0.5} \PY{o}{*} \PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{random}\PY{p}{(}\PY{n}{num}\PY{p}{)} \PY{o}{\PYZhy{}} \PY{l+m+mf}{0.5}\PY{p}{)}
+        
+            \PY{n}{fig} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{p}{)}
+            \PY{n}{ax1} \PY{o}{=} \PY{n}{fig}\PY{o}{.}\PY{n}{add\PYZus{}subplot}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{)}
+            \PY{n}{ax2} \PY{o}{=} \PY{n}{fig}\PY{o}{.}\PY{n}{add\PYZus{}subplot}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}
+        
+            \PY{c+c1}{\PYZsh{} Non\PYZhy{}linear Fit}
+            \PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C} \PY{o}{=} \PY{n}{fit\PYZus{}exp\PYZus{}nonlinear}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{noisy\PYZus{}y}\PY{p}{)}
+            \PY{n}{fit\PYZus{}y} \PY{o}{=} \PY{n}{model\PYZus{}func}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C}\PY{p}{)}
+            \PY{n}{plot}\PY{p}{(}\PY{n}{ax1}\PY{p}{,} \PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{n}{noisy\PYZus{}y}\PY{p}{,} \PY{n}{fit\PYZus{}y}\PY{p}{,} \PY{p}{(}\PY{n}{A0}\PY{p}{,} \PY{n}{K0}\PY{p}{,} \PY{n}{C0}\PY{p}{)}\PY{p}{,} \PY{p}{(}\PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C0}\PY{p}{)}\PY{p}{)}
+            \PY{n}{ax1}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Non\PYZhy{}linear Fit}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        
+            \PY{c+c1}{\PYZsh{} Linear Fit (Note that we have to provide the y\PYZhy{}offset (\PYZdq{}C\PYZdq{}) value!!}
+            \PY{n}{A}\PY{p}{,} \PY{n}{K} \PY{o}{=} \PY{n}{fit\PYZus{}exp\PYZus{}linear}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{n}{C0}\PY{p}{)}
+            \PY{n}{fit\PYZus{}y} \PY{o}{=} \PY{n}{model\PYZus{}func}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C0}\PY{p}{)}
+            \PY{n}{plot}\PY{p}{(}\PY{n}{ax2}\PY{p}{,} \PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{n}{noisy\PYZus{}y}\PY{p}{,} \PY{n}{fit\PYZus{}y}\PY{p}{,} \PY{p}{(}\PY{n}{A0}\PY{p}{,} \PY{n}{K0}\PY{p}{,} \PY{n}{C0}\PY{p}{)}\PY{p}{,} \PY{p}{(}\PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+            \PY{n}{ax2}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Linear Fit}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        
+            \PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+        
+        \PY{k}{def} \PY{n+nf}{fit\PYZus{}exp\PYZus{}linear}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{n}{C}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{:}
+            \PY{n}{y} \PY{o}{=} \PY{n}{y} \PY{o}{\PYZhy{}} \PY{n}{C}
+            \PY{n}{y} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{y}\PY{p}{)}
+            \PY{n}{K}\PY{p}{,} \PY{n}{A\PYZus{}log} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{polyfit}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{)}
+            \PY{n}{A} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{exp}\PY{p}{(}\PY{n}{A\PYZus{}log}\PY{p}{)}
+            \PY{k}{return} \PY{n}{A}\PY{p}{,} \PY{n}{K}
+        
+        \PY{k}{def} \PY{n+nf}{model\PYZus{}func}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C}\PY{p}{)}\PY{p}{:}
+            \PY{k}{return} \PY{n}{A} \PY{o}{*} \PY{n}{np}\PY{o}{.}\PY{n}{exp}\PY{p}{(}\PY{n}{K} \PY{o}{*} \PY{n}{t}\PY{p}{)} \PY{o}{+} \PY{n}{C}
+        
+        \PY{k}{def} \PY{n+nf}{fit\PYZus{}exp\PYZus{}nonlinear}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{)}\PY{p}{:}
+            \PY{n}{opt\PYZus{}parms}\PY{p}{,} \PY{n}{parm\PYZus{}cov} \PY{o}{=} \PY{n}{sp}\PY{o}{.}\PY{n}{optimize}\PY{o}{.}\PY{n}{curve\PYZus{}fit}\PY{p}{(}\PY{n}{model\PYZus{}func}\PY{p}{,} \PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{n}{maxfev}\PY{o}{=}\PY{l+m+mi}{100000}\PY{p}{)}
+            \PY{n}{parm\PYZus{}err} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{diag}\PY{p}{(}\PY{n}{parm\PYZus{}cov}\PY{p}{)}\PY{p}{)}
+            \PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C} \PY{o}{=} \PY{n}{opt\PYZus{}parms}
+            \PY{k}{return} \PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C}
+        
+        \PY{k}{def} \PY{n+nf}{plot}\PY{p}{(}\PY{n}{ax}\PY{p}{,} \PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{n}{noisy\PYZus{}y}\PY{p}{,} \PY{n}{fit\PYZus{}y}\PY{p}{,} \PY{n}{orig\PYZus{}parms}\PY{p}{,} \PY{n}{fit\PYZus{}parms}\PY{p}{)}\PY{p}{:}
+            \PY{n}{A0}\PY{p}{,} \PY{n}{K0}\PY{p}{,} \PY{n}{C0} \PY{o}{=} \PY{n}{orig\PYZus{}parms}
+            \PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C} \PY{o}{=} \PY{n}{fit\PYZus{}parms}
+        
+            \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{k\PYZhy{}\PYZhy{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} 
+              \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Actual Function:}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{ \PYZdl{}y = }\PY{l+s+si}{\PYZpc{}0.2f}\PY{l+s+s1}{ e\PYZca{}}\PY{l+s+s1}{\PYZob{}}\PY{l+s+si}{\PYZpc{}0.2f}\PY{l+s+s1}{ t\PYZcb{} + }\PY{l+s+si}{\PYZpc{}0.2f}\PY{l+s+s1}{\PYZdl{}}\PY{l+s+s1}{\PYZsq{}} \PY{o}{\PYZpc{}} \PY{p}{(}\PY{n}{A0}\PY{p}{,} \PY{n}{K0}\PY{p}{,} \PY{n}{C0}\PY{p}{)}\PY{p}{)}
+            \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{fit\PYZus{}y}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{b\PYZhy{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+              \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Fitted Function:}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{ \PYZdl{}y = }\PY{l+s+si}{\PYZpc{}0.2f}\PY{l+s+s1}{ e\PYZca{}}\PY{l+s+s1}{\PYZob{}}\PY{l+s+si}{\PYZpc{}0.2f}\PY{l+s+s1}{ t\PYZcb{} + }\PY{l+s+si}{\PYZpc{}0.2f}\PY{l+s+s1}{\PYZdl{}}\PY{l+s+s1}{\PYZsq{}} \PY{o}{\PYZpc{}} \PY{p}{(}\PY{n}{A}\PY{p}{,} \PY{n}{K}\PY{p}{,} \PY{n}{C}\PY{p}{)}\PY{p}{)}
+            \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{t}\PY{p}{,} \PY{n}{noisy\PYZus{}y}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ro}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+            \PY{n}{ax}\PY{o}{.}\PY{n}{legend}\PY{p}{(}\PY{n}{bbox\PYZus{}to\PYZus{}anchor}\PY{o}{=}\PY{p}{(}\PY{l+m+mf}{1.05}\PY{p}{,} \PY{l+m+mf}{1.1}\PY{p}{)}\PY{p}{,} \PY{n}{fancybox}\PY{o}{=}\PY{k+kc}{True}\PY{p}{,} \PY{n}{shadow}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\end{Verbatim}
+
+
+
+    % Add a bibliography block to the postdoc
+    
+    
+    
+    \end{document}
