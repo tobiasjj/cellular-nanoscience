@@ -20,12 +20,13 @@ from matplotlib import pyplot as plt
 from IPython.display import display
 from ipywidgets import Label, interactive_output, Checkbox, IntText, BoundedIntText, FloatText, HBox, VBox
 from .binning import calculate_bin_means
+from stepfinder import filter_fbnl
+import unzipping_simulation as uzsi
 import math
 import numpy as np
 import os
 import collections
 import itertools
-from stepfinder import filter_fbnl
 
 
 def cart2sph(x, y, z, offset_phi=0, positive_phi=False):
@@ -112,11 +113,11 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
                 forceXYZ = tether.forceXYZ(samples=idx[0])
                 # calculate angles theta and phi
                 angle_extension = np.array([
-                        cart2sph(*point)[1:] for point in distanceXYZ
-                        ])*180/math.pi
+                    cart2sph(*point)[1:] for point in distanceXYZ
+                    ])*180/math.pi
                 angle_force = np.array([
-                        cart2sph(*point)[1:] for point in forceXYZ
-                        ])*180/math.pi
+                    cart2sph(*point)[1:] for point in forceXYZ
+                    ])*180/math.pi
                 if avoid_twopi_switch:
                     angle_extension[angle_extension[:,1] < 0.0, 1] += 360
                     angle_force[angle_force[:,1] < 0.0, 1] += 360
@@ -141,17 +142,17 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
 
     # Calculate angles with already binned distance/force data
     if angles and angles_after_binning:
-            for i in range(2):  # 1: stress, 2: release
-                angle_extension = np.array([
-                        cart2sph(*point)[1:]
-                        for point in bin_means[i][:, 7:10]])*180/math.pi
-                angle_force = np.array([
-                        cart2sph(*point)[1:]
-                        for point in bin_means[i][:, 10:13]])*180/math.pi
-                if avoid_twopi_switch:
-                    angle_extension[angle_extension[:,1] < 0.0, 1] += 360
-                    angle_force[angle_force[:,1] < 0.0, 1] += 360
-                bin_means[i] = np.c_[bin_means[i], angle_extension, angle_force]
+        for i in range(2):  # 1: stress, 2: release
+            angle_extension = np.array([
+                cart2sph(*point)[1:]
+                for point in bin_means[i][:, 7:10]])*180/math.pi
+            angle_force = np.array([
+                cart2sph(*point)[1:]
+                for point in bin_means[i][:, 10:13]])*180/math.pi
+            if avoid_twopi_switch:
+                angle_extension[angle_extension[:,1] < 0.0, 1] += 360
+                angle_force[angle_force[:,1] < 0.0, 1] += 360
+            bin_means[i] = np.c_[bin_means[i], angle_extension, angle_force]
 
     return edges, centers, widths, bin_means, bin_stds, bin_Ns
 
@@ -203,11 +204,11 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
                 forceXYZ = tether.forceXYZ(samples=idx[0])
                 # calculate angles theta and phi
                 angle_extension = np.array([
-                        cart2sph(*point)[1:] for point in distanceXYZ
-                        ])*180/math.pi
+                    cart2sph(*point)[1:] for point in distanceXYZ
+                    ])*180/math.pi
                 angle_force = np.array([
-                        cart2sph(*point)[1:] for point in forceXYZ
-                        ])*180/math.pi
+                    cart2sph(*point)[1:] for point in forceXYZ
+                    ])*180/math.pi
                 if avoid_twopi_switch:
                     angle_extension[angle_extension[:,1] < 0.0, 1] += 360
                     angle_force[angle_force[:,1] < 0.0, 1] += 360
@@ -235,17 +236,17 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
 
     # Calculate angles with already filtered distance/force data
     if angles and angles_after_filter:
-            for i in range(2):  # 1: stress, 2: release
-                angle_extension = np.array([
-                        cart2sph(*point)[1:]
-                        for point in data[i][:, 7:10]])*180/math.pi
-                angle_force = np.array([
-                        cart2sph(*point)[1:]
-                        for point in data[i][:, 10:13]])*180/math.pi
-                if avoid_twopi_switch:
-                    angle_extension[angle_extension[:,1] < 0.0, 1] += 360
-                    angle_force[angle_force[:,1] < 0.0, 1] += 360
-                data[i] = np.c_[data[i], angle_extension, angle_force]
+        for i in range(2):  # 1: stress, 2: release
+            angle_extension = np.array([
+                cart2sph(*point)[1:]
+                for point in data[i][:, 7:10]])*180/math.pi
+            angle_force = np.array([
+                cart2sph(*point)[1:]
+                for point in data[i][:, 10:13]])*180/math.pi
+            if avoid_twopi_switch:
+                angle_extension[angle_extension[:,1] < 0.0, 1] += 360
+                angle_force[angle_force[:,1] < 0.0, 1] += 360
+            data[i] = np.c_[data[i], angle_extension, angle_force]
 
     return data, fbnl_filters
 
@@ -270,6 +271,107 @@ def plot_force_extension(x, y, ystd=None, yerr=None, ax=None, show=False):
     if show:
         ax.get_figure().show()
     return ax
+
+
+def plot_unzip_data(tether, I, ax=None,
+                    sortcolumn=0, resolution=500, fbnl=False,
+                    filter_time=0.001, edginess=1,
+                    shift_x=0e-9, t_delta=15,
+                    plot_stress=True, plot_release=True, plot_raw=False,
+                    annotate_stress=True, annotate_release=True,
+                    simulation=None):
+    """
+    i : int or list of ints
+        the force extension data to be plotted
+    t_delta : float
+        Time in seconds the microsphere was trapped before the start of the very
+        first stress-release cycle
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+
+    ###############################
+    ### Get and plot simulated data
+    if simulation is not None:
+        e_sim, f_sim, fXYZ, nuz = uzsi.get_force_extension_nuz(simulation,
+                                                               theta=False)
+        # Apparent extension and average force acting on the microsphere
+        ax.plot(e_sim[f_sim<=25e-12]*1e9, f_sim[f_sim<=25e-12]*1e12,
+                color='#000000', ls=(0, (2.5, 2.5)), label='Simulation')
+                # (offset, (on_off_seq)) dashes=(3, 2))
+        #ax.annotate('Simulation', xy=(650, 7), xycoords='data', color=c)
+        #            # xytext=(21.35, -15), textcoords='offset points',
+        #            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
+
+    if not isinstance(I, collections.Iterable):
+        I = [I]
+    for i in I:
+        ##################################
+        ### Get and plot raw force extension
+        if plot_raw:
+            # Get raw extension and force for stress and release cycle
+            fe_pair = tether.force_extension_pair(i=i, time=True)
+            (x_stress, f_stress, info_stress,
+             x_release, f_release, info_release,
+             t_stress, t_release) = fe_pair
+            extension_raw = np.r_[x_stress, x_release]
+            force_raw = np.r_[f_stress, f_release]
+            ax.plot((extension_raw + shift_x) * 1e9, force_raw * 1e12, c='#CCCCCC')
+
+        ###############################################################################
+        ### Get and plot force extension curve and simulation
+        if fbnl:
+            # Get fbnl_filter filtered force extension
+            result = fbnl_force_extension(tether, i, filter_time=filter_time, edginess=edginess)
+            filtered_data, fbnl_filters = result  # 0: stress, 1: release
+        else:
+            # Get binned force extension
+            bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns \
+                = binned_force_extension(tether, i, resolution=resolution, sortcolumn=sortcolumn)
+            filtered_data = bin_means  # 0: stress, 1: release
+
+        # Get tmin and tmax from the first stress and the last release cycle datapoint
+        tmin = filtered_data[0][0,0] + t_delta
+        tmax = filtered_data[1][-1,0] + t_delta
+        time = '$t={:3.0f}-{:3.0f}\,s$'.format(tmin, tmax)
+        time = '$t={:3.0f}\,s$'.format((tmin+tmax)/2)
+
+        # Plot release cycle [1]
+        if plot_release:
+            cycle = 1
+            pre = 'rls '
+            c = 'magenta'
+            ax.plot((filtered_data[cycle][:,1] + shift_x) * 1e9,
+                    filtered_data[cycle][:,2] * 1e12,
+                    label='{}{}'.format(pre, time))
+            if annotate_release:
+                ax.annotate('Release', xy=(700, 23), xycoords='data', color=c)
+                            # xytext=(5, -30), textcoords='offset points',
+                            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
+                ax.annotate("", xytext=(700, 22), xy=(750, 22), xycoords='data',
+                            arrowprops=dict(linewidth=1.25, arrowstyle="<-", color=c))
+
+        # Plot stress cycle [0]
+        if plot_stress:
+            cycle = 0
+            pre = 'str '
+            c = 'cyan'
+            ax.plot((filtered_data[cycle][:,1] + shift_x) * 1e9,
+                    filtered_data[cycle][:,2] * 1e12,
+                    label='{}{}'.format(pre, time))
+            if annotate_stress:
+                ax.annotate('Stretch', xy=(600, 23), xycoords='data', color=c)
+                            # xytext=(5, 20), textcoords='offset points',
+                            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
+                ax.annotate("", xytext=(600, 22), xy=(650, 22), xycoords='data',
+                            arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
+
+    ax.set_xlabel('Extension (nm)')
+    ax.set_ylabel('Force (pN)')
+
+    return fig, ax
 
 
 def _create_twin_ax(ax, subplot_pos=None):
@@ -314,7 +416,7 @@ def plot_angle_extension(x, theta_phi, axes=None, show=False):
 def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
                            resolution=None, sortcolumn=0,
                            ax=None, autoscale=True, xlim=None,
-                           ylim=None, extra_traces=None):
+                           ylim=None):
     """
     Update the figure with force extension data.
 
@@ -325,6 +427,7 @@ def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
     ylim : (float, float), optional
         Set ylim of the axis.
     """
+    extra_traces = None
     # Calculate binned force extension data
     result = binned_force_extension(tether=tether, i=i, posmin=posmin,
                                     bins=bins, resolution=resolution,
@@ -337,16 +440,14 @@ def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
     ploty = 2
 
     ax = ax or plt.gcf().gca()
-
     clear_force_extension(ax=ax)
 
     for d in range(2):  # 0 = stress, 1 = release
-        plot_force_extension(
-            bin_means[d][:, plotx],
-            bin_means[d][:, ploty],
-            bin_stds[d][:, ploty],
-            bin_stds[d][:, ploty] / np.sqrt(bin_Ns[d]),
-            ax=ax)
+        e = bin_means[d][:, plotx]
+        f = bin_means[d][:, ploty]
+        fstd = bin_stds[d][:, ploty]
+        ferr = bin_stds[d][:, ploty] / np.sqrt(bin_Ns[d])
+        plot_force_extension(e, f, fstd, ferr, ax=ax)
 
     '''
     # Calculate force extension of a dna with a known length and plot it
@@ -470,65 +571,65 @@ def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
 
 def autolimits(tether, posmin=10e-9, samples=None, e=None, f=None, xlim=None,
                ylim=None):
-        """
-        Determine xlim and ylim values for force extension plots.
+    """
+    Determine xlim and ylim values for force extension plots.
 
-        Parameters
-        ----------
-        samples : int, slice or index array, optional
-            Samples to get extension and force from.
-        e : 1D numpy.ndarray of floats, optional
-            Extension in nm. Takes precedence over extension determined with
-            `samples`.
-        f : 1D numpy.ndarray of floats, optional
-            Force in pN. Takes precedence over force determined with `samples`.
-        xlim : (float, float), optional
-            Xlimit of force extension axis. Takes precedence over xlim
-            determined with `e`.
-        ylim : (float, float), optional
-            Ylimit of force extension axis. Takes precedence over ylim
-            determined with `f`.
+    Parameters
+    ----------
+    samples : int, slice or index array, optional
+        Samples to get extension and force from.
+    e : 1D numpy.ndarray of floats, optional
+        Extension in nm. Takes precedence over extension determined with
+        `samples`.
+    f : 1D numpy.ndarray of floats, optional
+        Force in pN. Takes precedence over force determined with `samples`.
+    xlim : (float, float), optional
+        Xlimit of force extension axis. Takes precedence over xlim
+        determined with `e`.
+    ylim : (float, float), optional
+        Ylimit of force extension axis. Takes precedence over ylim
+        determined with `f`.
 
-        Returns
-        -------
-        (float, float)
-            The xlim
-        (float, float)
-            The ylim
-        """
-        if samples is None \
-                and (xlim is None and e is None) \
-                or (ylim is None and f is None):
-            # Get the start/stop indices of the data to be used to determine
-            # the min max values
-            sts, rls = tether.stress_release_pairs()
-            start = sts[0].start
-            stop = rls[-1].stop
-            samples = slice(start, stop)
+    Returns
+    -------
+    (float, float)
+        The xlim
+    (float, float)
+        The ylim
+    """
+    if samples is None \
+            and (xlim is None and e is None) \
+            or (ylim is None and f is None):
+        # Get the start/stop indices of the data to be used to determine
+        # the min max values
+        sts, rls = tether.stress_release_pairs()
+        start = sts[0].start
+        stop = rls[-1].stop
+        samples = slice(start, stop)
 
-        if xlim is None and ylim is None and e is None and f is None:
-                e_f = tether.force_extension(samples=samples, posmin=posmin)  # m, N
-                e = e_f[:, 0]
-                f = e_f[:, 1]
-        if xlim is None and e is None:
-            e = tether.extension(samples=samples, posmin=posmin) # m
-        if ylim is None and f is None:
-            f = tether.force(samples=samples, posmin=posmin) # N
+    if xlim is None and ylim is None and e is None and f is None:
+        e_f = tether.force_extension(samples=samples, posmin=posmin)  # m, N
+        e = e_f[:, 0]
+        f = e_f[:, 1]
+    if xlim is None and e is None:
+        e = tether.extension(samples=samples, posmin=posmin) # m
+    if ylim is None and f is None:
+        f = tether.force(samples=samples, posmin=posmin) # N
 
-        if xlim is None:
-            e_min = e.min()
-            e_max = e.max()
-            e_diff = (e_max - e_min) * 0.02
-            xlim = ((e_min - e_diff) * 1e9, (e_max + e_diff) * 1e9)
+    if xlim is None:
+        e_min = e.min()
+        e_max = e.max()
+        e_diff = (e_max - e_min) * 0.02
+        xlim = ((e_min - e_diff) * 1e9, (e_max + e_diff) * 1e9)
 
-        if ylim is None:
-            f_min = f.min()
-            f_max = f.max()
-            f_diff = (f_max - f_min) * 0.02
-            ylim = ((f_min - f_diff) * 1e12, (f_max + f_diff) * 1e12)
+    if ylim is None:
+        f_min = f.min()
+        f_max = f.max()
+        f_diff = (f_max - f_min) * 0.02
+        ylim = ((f_min - f_diff) * 1e12, (f_max + f_diff) * 1e12)
 
-        # Return the set limits
-        return xlim, ylim
+    # Return the set limits
+    return xlim, ylim
 
 
 def save_figures(figures, directory=None, file_prefix=None, file_suffix=None,
@@ -613,3 +714,47 @@ def save_figures(figures, directory=None, file_prefix=None, file_suffix=None,
         # Redraw the figure, after the last one has been saved
         self.fe_figure.canvas.draw()
 '''
+
+
+def get_simulation(tether, i, settings_file, individual_posZ=False, posZ=None,
+                   **kwargs):
+    """
+    Get unzipping simulation for tether force extension segment number `i`.
+
+    Determine `kappa` and `positionZ` from `tether` to get a proper simulation.
+
+    Parameters
+    ----------
+    tether : Tether
+        The tether object
+    i : int
+        The segment number to get the unzipping simulation for
+    settings_file : str
+        The filepath of the settings file for the simulation
+    individual_posZ : bool
+        Calculate the median of the distance of the microsphere to the surface from
+        positionZ for each individual segment or the whole tether.region.
+    posZ : float
+        Set the positionZ manually (m).
+    """
+    # Get the simulation with corresponding radius, kappa, and h0
+    # Get radius from calibration
+    radius = tether.calibration.radius
+    # Determine distance between microsphere and surface
+    if posZ is None:
+        idx = None
+        if individual_posZ:
+            idx = tether.samples(i, cycle='stress')
+        posZ = np.median(tether.get_data('positionZ', samples=idx))
+    h0 = max(0.0, - posZ * tether.calibration.focalshift)
+    # Determine excited axis and create kappa for two axes
+    axis = {'x': 0, 'y': 1}
+    ax = tether.stress_release_pairs(i=i, info=True)[2][0,0]
+    axes_kappa = [axis[ax], 2]
+    kappa = tether.calibration.kappa(posZ)[axes_kappa]
+
+    # Get/do simulation with simulation_settings_file and selected kappa and h0
+    simulation = uzsi.get_unzipping_simulation(settings_file, radius=radius,
+                                               kappa=kappa, h0=h0, **kwargs)
+
+    return simulation
