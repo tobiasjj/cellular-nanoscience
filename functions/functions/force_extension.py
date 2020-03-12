@@ -273,107 +273,6 @@ def plot_force_extension(x, y, ystd=None, yerr=None, ax=None, show=False):
     return ax
 
 
-def plot_unzip_data(tether, I, ax=None,
-                    sortcolumn=0, resolution=500, fbnl=False,
-                    filter_time=0.001, edginess=1,
-                    shift_x=0e-9, t_delta=15,
-                    plot_stress=True, plot_release=True, plot_raw=False,
-                    annotate_stress=True, annotate_release=True,
-                    simulation=None):
-    """
-    i : int or list of ints
-        the force extension data to be plotted
-    t_delta : float
-        Time in seconds the microsphere was trapped before the start of the very
-        first stress-release cycle
-    """
-    if ax is None:
-        fig, ax = plt.subplots()
-    else:
-        fig = ax.get_figure()
-
-    ###############################
-    ### Get and plot simulated data
-    if simulation is not None:
-        e_sim, f_sim, fXYZ, nuz = uzsi.get_force_extension_nuz(simulation,
-                                                               theta=False)
-        # Apparent extension and average force acting on the microsphere
-        ax.plot(e_sim[f_sim<=25e-12]*1e9, f_sim[f_sim<=25e-12]*1e12,
-                color='#000000', ls=(0, (2.5, 2.5)), label='Simulation')
-                # (offset, (on_off_seq)) dashes=(3, 2))
-        #ax.annotate('Simulation', xy=(650, 7), xycoords='data', color=c)
-        #            # xytext=(21.35, -15), textcoords='offset points',
-        #            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
-
-    if not isinstance(I, collections.Iterable):
-        I = [I]
-    for i in I:
-        ##################################
-        ### Get and plot raw force extension
-        if plot_raw:
-            # Get raw extension and force for stress and release cycle
-            fe_pair = tether.force_extension_pair(i=i, time=True)
-            (x_stress, f_stress, info_stress,
-             x_release, f_release, info_release,
-             t_stress, t_release) = fe_pair
-            extension_raw = np.r_[x_stress, x_release]
-            force_raw = np.r_[f_stress, f_release]
-            ax.plot((extension_raw + shift_x) * 1e9, force_raw * 1e12, c='#CCCCCC')
-
-        ###############################################################################
-        ### Get and plot force extension curve and simulation
-        if fbnl:
-            # Get fbnl_filter filtered force extension
-            result = fbnl_force_extension(tether, i, filter_time=filter_time, edginess=edginess)
-            filtered_data, fbnl_filters = result  # 0: stress, 1: release
-        else:
-            # Get binned force extension
-            bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns \
-                = binned_force_extension(tether, i, resolution=resolution, sortcolumn=sortcolumn)
-            filtered_data = bin_means  # 0: stress, 1: release
-
-        # Get tmin and tmax from the first stress and the last release cycle datapoint
-        tmin = filtered_data[0][0,0] + t_delta
-        tmax = filtered_data[1][-1,0] + t_delta
-        time = '$t={:3.0f}-{:3.0f}\,s$'.format(tmin, tmax)
-        time = '$t={:3.0f}\,s$'.format((tmin+tmax)/2)
-
-        # Plot release cycle [1]
-        if plot_release:
-            cycle = 1
-            pre = 'rls '
-            c = 'magenta'
-            ax.plot((filtered_data[cycle][:,1] + shift_x) * 1e9,
-                    filtered_data[cycle][:,2] * 1e12,
-                    label='{}{}'.format(pre, time))
-            if annotate_release:
-                ax.annotate('Release', xy=(700, 23), xycoords='data', color=c)
-                            # xytext=(5, -30), textcoords='offset points',
-                            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
-                ax.annotate("", xytext=(700, 22), xy=(750, 22), xycoords='data',
-                            arrowprops=dict(linewidth=1.25, arrowstyle="<-", color=c))
-
-        # Plot stress cycle [0]
-        if plot_stress:
-            cycle = 0
-            pre = 'str '
-            c = 'cyan'
-            ax.plot((filtered_data[cycle][:,1] + shift_x) * 1e9,
-                    filtered_data[cycle][:,2] * 1e12,
-                    label='{}{}'.format(pre, time))
-            if annotate_stress:
-                ax.annotate('Stretch', xy=(600, 23), xycoords='data', color=c)
-                            # xytext=(5, 20), textcoords='offset points',
-                            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
-                ax.annotate("", xytext=(600, 22), xy=(650, 22), xycoords='data',
-                            arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
-
-    ax.set_xlabel('Extension (nm)')
-    ax.set_ylabel('Force (pN)')
-
-    return fig, ax
-
-
 def _create_twin_ax(ax, subplot_pos=None):
     fig = ax.get_figure()
     subplot_pos = subplot_pos or (1, 1, 1)
@@ -716,8 +615,8 @@ def save_figures(figures, directory=None, file_prefix=None, file_suffix=None,
 '''
 
 
-def get_simulation(tether, i, settings_file, individual_posZ=False, posZ=None,
-                   **kwargs):
+def get_simulation(tether, i, settings_file, posZ=None, individual_posZ=False,
+                   kappa=None, **kwargs):
     """
     Get unzipping simulation for tether force extension segment number `i`.
 
@@ -737,9 +636,9 @@ def get_simulation(tether, i, settings_file, individual_posZ=False, posZ=None,
     posZ : float
         Set the positionZ manually (m).
     """
-    # Get the simulation with corresponding radius, kappa, and h0
     # Get radius from calibration
     radius = tether.calibration.radius
+
     # Determine distance between microsphere and surface
     if posZ is None:
         idx = None
@@ -747,14 +646,117 @@ def get_simulation(tether, i, settings_file, individual_posZ=False, posZ=None,
             idx = tether.samples(i, cycle='stress')
         posZ = np.median(tether.get_data('positionZ', samples=idx))
     h0 = max(0.0, - posZ * tether.calibration.focalshift)
-    # Determine excited axis and create kappa for two axes
+
+    # Get kappa for excited axis and axis Z
     axis = {'x': 0, 'y': 1}
     ax = tether.stress_release_pairs(i=i, info=True)[2][0,0]
     axes_kappa = [axis[ax], 2]
-    kappa = tether.calibration.kappa(posZ)[axes_kappa]
+    kappa = tether.calibration.kappa(posZ) if kappa is None else kappa
+    kappa = kappa[axes_kappa]
 
-    # Get/do simulation with simulation_settings_file and selected kappa and h0
+    # Get/do simulation with simulation_settings_file and radius, h0, and kappa
     simulation = uzsi.get_unzipping_simulation(settings_file, radius=radius,
                                                kappa=kappa, h0=h0, **kwargs)
 
     return simulation
+
+
+def plot_unzip_data(tether, I, ax=None,
+                    sortcolumn=0, resolution=500, fbnl=False,
+                    filter_time=0.001, edginess=1,
+                    shift_x=0e-9, t_delta=15,
+                    plot_stress=True, plot_release=True, plot_raw=False,
+                    annotate_stress=True, annotate_release=True,
+                    simulation=None):
+    """
+    i : int or list of ints
+        the force extension data to be plotted
+    t_delta : float
+        Time in seconds the microsphere was trapped before the start of the very
+        first stress-release cycle
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+
+    ###############################
+    ### Get and plot simulated data
+    if simulation is not None:
+        e_sim, f_sim, fXYZ, nuz = uzsi.get_force_extension_nuz(simulation,
+                                                               theta=False)
+        # Apparent extension and average force acting on the microsphere
+        ax.plot(e_sim[f_sim<=25e-12]*1e9, f_sim[f_sim<=25e-12]*1e12,
+                color='#000000', ls=(0, (2.5, 2.5)), label='Simulation')
+                # (offset, (on_off_seq)) dashes=(3, 2))
+        #ax.annotate('Simulation', xy=(650, 7), xycoords='data', color=c)
+        #            # xytext=(21.35, -15), textcoords='offset points',
+        #            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
+
+    if not isinstance(I, collections.Iterable):
+        I = [I]
+    for i in I:
+        ##################################
+        ### Get and plot raw force extension
+        if plot_raw:
+            # Get raw extension and force for stress and release cycle
+            fe_pair = tether.force_extension_pair(i=i, time=True)
+            (x_stress, f_stress, info_stress,
+             x_release, f_release, info_release,
+             t_stress, t_release) = fe_pair
+            extension_raw = np.r_[x_stress, x_release]
+            force_raw = np.r_[f_stress, f_release]
+            ax.plot((extension_raw + shift_x) * 1e9, force_raw * 1e12, c='#CCCCCC')
+
+        ###############################################################################
+        ### Get and plot force extension curve and simulation
+        if fbnl:
+            # Get fbnl_filter filtered force extension
+            result = fbnl_force_extension(tether, i, filter_time=filter_time, edginess=edginess)
+            filtered_data, fbnl_filters = result  # 0: stress, 1: release
+        else:
+            # Get binned force extension
+            bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns \
+                = binned_force_extension(tether, i, resolution=resolution, sortcolumn=sortcolumn)
+            filtered_data = bin_means  # 0: stress, 1: release
+
+        # Get tmin and tmax from the first stress and the last release cycle datapoint
+        tmin = filtered_data[0][0,0] + t_delta
+        tmax = filtered_data[1][-1,0] + t_delta
+        time = '$t={:3.0f}-{:3.0f}\,s$'.format(tmin, tmax)
+        time = '$t={:3.0f}\,s$'.format((tmin+tmax)/2)
+
+        # Plot release cycle [1]
+        if plot_release:
+            cycle = 1
+            pre = 'rls '
+            c = 'magenta'
+            ax.plot((filtered_data[cycle][:,1] + shift_x) * 1e9,
+                    filtered_data[cycle][:,2] * 1e12,
+                    label='{}{}'.format(pre, time))
+            if annotate_release:
+                ax.annotate('Release', xy=(700, 23), xycoords='data', color=c)
+                            # xytext=(5, -30), textcoords='offset points',
+                            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
+                ax.annotate("", xytext=(700, 22), xy=(750, 22), xycoords='data',
+                            arrowprops=dict(linewidth=1.25, arrowstyle="<-", color=c))
+
+        # Plot stress cycle [0]
+        if plot_stress:
+            cycle = 0
+            pre = 'str '
+            c = 'cyan'
+            ax.plot((filtered_data[cycle][:,1] + shift_x) * 1e9,
+                    filtered_data[cycle][:,2] * 1e12,
+                    label='{}{}'.format(pre, time))
+            if annotate_stress:
+                ax.annotate('Stretch', xy=(600, 23), xycoords='data', color=c)
+                            # xytext=(5, 20), textcoords='offset points',
+                            # arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
+                ax.annotate("", xytext=(600, 22), xy=(650, 22), xycoords='data',
+                            arrowprops=dict(linewidth=1.25, arrowstyle="->", color=c))
+
+    ax.set_xlabel('Extension (nm)')
+    ax.set_ylabel('Force (pN)')
+
+    return fig, ax
