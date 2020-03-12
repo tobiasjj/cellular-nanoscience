@@ -616,7 +616,7 @@ def save_figures(figures, directory=None, file_prefix=None, file_suffix=None,
 
 
 def get_simulation(tether, i, settings_file, posZ=None, individual_posZ=False,
-                   kappa=None, **kwargs):
+                   kappa=None, kappa_z_factor=None, **kwargs):
     """
     Get unzipping simulation for tether force extension segment number `i`.
 
@@ -652,7 +652,8 @@ def get_simulation(tether, i, settings_file, posZ=None, individual_posZ=False,
     ax = tether.stress_release_pairs(i=i, info=True)[2][0,0]
     axes_kappa = [axis[ax], 2]
     kappa = tether.calibration.kappa(posZ) if kappa is None else kappa
-    kappa = kappa[axes_kappa]
+    kappa_z_factor = 1 if kappa_z_factor is None else kappa_z_factor
+    kappa = kappa[axes_kappa] * np.array([1, kappa_z_factor])
 
     # Get/do simulation with simulation_settings_file and radius, h0, and kappa
     simulation = uzsi.get_unzipping_simulation(settings_file, radius=radius,
