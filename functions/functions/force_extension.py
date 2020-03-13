@@ -73,8 +73,8 @@ def angle(v1, v2):
 
 
 def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
-                           sortcolumn=0, angles=False, angles_after_binning=False,
-                           extra_traces=None, phi_shift_twopi=False):
+                           sortcolumn=0, angles=False, extra_traces=None,
+                           angles_after_binning=False, phi_shift_twopi=False):
     """
     Parameters
     ----------
@@ -107,7 +107,7 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
         # Calculate angles for stress and release of extension and force
         # vectors
         for i, idx in enumerate(idxs):  # 1: stress, 2: release
-            if angles:
+            if  angles:
                 # Get distance/force (vectors XYZ)
                 distanceXYZ = tether.distanceXYZ(samples=idx[0])
                 forceXYZ = tether.forceXYZ(samples=idx[0])
@@ -157,9 +157,9 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
     return edges, centers, widths, bin_means, bin_stds, bin_Ns
 
 
-def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
-                         angles=False, angles_after_filter=False,
-                         extra_traces=None, phi_shift_twopi=False):
+def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005,
+                         edginess=1, angles=False, extra_traces=None,
+                         angles_after_filter=False, phi_shift_twopi=False):
     """
     Parameters
     ----------
@@ -177,7 +177,7 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
     Returns
     -------
     filtered_data, fbnl_filters
-        filtered_data is a list of two np.ndarrays (0: stress, 1: release)
+    filtered_data is a list of two np.ndarrays (0: stress, 1: release)
         each array has the filtered data with the columns 0: time, 1: extension
         2: force, and extra traces/angles
         fbnl_filters is a list of two lists (0: stress, 1: release) containing
