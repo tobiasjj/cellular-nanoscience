@@ -73,8 +73,8 @@ def angle(v1, v2):
 
 
 def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
-                           sortcolumn=0, angles=False, extra_traces=None,
-                           angles_after_binning=False, avoid_twopi_switch=False):
+                           sortcolumn=0, angles=False, angles_after_binning=False,
+                           extra_traces=None, avoid_twopi_switch=False):
     """
     Parameters
     ----------
@@ -158,8 +158,8 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
 
 
 def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
-                         angles=False, extra_traces=None,
-                         angles_after_filter=False, avoid_twopi_switch=False):
+                         angles=False, angles_after_filter=False,
+                         extra_traces=None, avoid_twopi_switch=False):
     """
     Parameters
     ----------
