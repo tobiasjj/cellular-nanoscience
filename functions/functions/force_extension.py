@@ -73,8 +73,9 @@ def angle(v1, v2):
 
 
 def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
-                           sortcolumn=0, angles=False, extra_traces=None,
-                           angles_after_binning=False, phi_shift_twopi=False):
+                           sortcolumn=0, fXYZ_factors=None, angles=False,
+                           extra_traces=None, angles_after_binning=False,
+                           phi_shift_twopi=False):
     """
     Parameters
     ----------
@@ -91,7 +92,8 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
     angles_after_binning : bool
         13,14,15,16: theta (13,15) and phi (14,16) for extension and force
     """
-    fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin)
+    fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin,
+                                          fXYZ_factors=fXYZ_factors)
     (x_stress, y_stress, info_stress,
      x_release, y_release, info_release,
      t_stress, t_release) = fe_pair
@@ -110,7 +112,8 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
             if  angles:
                 # Get distance/force (vectors XYZ)
                 distanceXYZ = tether.distanceXYZ(samples=idx[0])
-                forceXYZ = tether.forceXYZ(samples=idx[0])
+                forceXYZ = tether.forceXYZ(samples=idx[0],
+                                           fXYZ_factors=fXYZ_factors)
                 # calculate angles theta and phi
                 angle_extension = np.array([
                     cart2sph(*point)[1:] for point in distanceXYZ
@@ -158,8 +161,9 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
 
 
 def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005,
-                         edginess=1, angles=False, extra_traces=None,
-                         angles_after_filter=False, phi_shift_twopi=False):
+                         edginess=1, fXYZ_factors=None, angles=False,
+                         extra_traces=None, angles_after_filter=False,
+                         phi_shift_twopi=False):
     """
     Parameters
     ----------
@@ -183,7 +187,8 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005,
         fbnl_filters is a list of two lists (0: stress, 1: release) containing
         the individual FBNL_Filter_results of the filtered data
     """
-    fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin)
+    fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin,
+                                          fXYZ_factors=fXYZ_factors)
     (x_stress, y_stress, info_stress,
      x_release, y_release, info_release,
      t_stress, t_release) = fe_pair
@@ -201,7 +206,8 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005,
             if angles:
                 # Get distance/force (vectors XYZ)
                 distanceXYZ = tether.distanceXYZ(samples=idx[0])
-                forceXYZ = tether.forceXYZ(samples=idx[0])
+                forceXYZ = tether.forceXYZ(samples=idx[0],
+                                           fXYZ_factors=fXYZ_factors)
                 # calculate angles theta and phi
                 angle_extension = np.array([
                     cart2sph(*point)[1:] for point in distanceXYZ
