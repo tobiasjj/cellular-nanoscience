@@ -74,7 +74,7 @@ def angle(v1, v2):
 
 def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
                            sortcolumn=0, angles=False, angles_after_binning=False,
-                           extra_traces=None, avoid_twopi_switch=False):
+                           extra_traces=None, phi_shift_twopi=False):
     """
     Parameters
     ----------
@@ -118,7 +118,7 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
                 angle_force = np.array([
                     cart2sph(*point)[1:] for point in forceXYZ
                     ])*180/math.pi
-                if avoid_twopi_switch:
+                if phi_shift_twopi:
                     angle_extension[angle_extension[:,1] < 0.0, 1] += 360
                     angle_force[angle_force[:,1] < 0.0, 1] += 360
                 data[i] = np.c_[data[i], angle_extension, angle_force,
@@ -149,7 +149,7 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
             angle_force = np.array([
                 cart2sph(*point)[1:]
                 for point in bin_means[i][:, 10:13]])*180/math.pi
-            if avoid_twopi_switch:
+            if phi_shift_twopi:
                 angle_extension[angle_extension[:,1] < 0.0, 1] += 360
                 angle_force[angle_force[:,1] < 0.0, 1] += 360
             bin_means[i] = np.c_[bin_means[i], angle_extension, angle_force]
@@ -159,7 +159,7 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
 
 def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
                          angles=False, angles_after_filter=False,
-                         extra_traces=None, avoid_twopi_switch=False):
+                         extra_traces=None, phi_shift_twopi=False):
     """
     Parameters
     ----------
@@ -209,7 +209,7 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
                 angle_force = np.array([
                     cart2sph(*point)[1:] for point in forceXYZ
                     ])*180/math.pi
-                if avoid_twopi_switch:
+                if phi_shift_twopi:
                     angle_extension[angle_extension[:,1] < 0.0, 1] += 360
                     angle_force[angle_force[:,1] < 0.0, 1] += 360
                 data[i] = np.c_[data[i], angle_extension, angle_force,
@@ -243,7 +243,7 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=0.005, edginess=1,
             angle_force = np.array([
                 cart2sph(*point)[1:]
                 for point in data[i][:, 10:13]])*180/math.pi
-            if avoid_twopi_switch:
+            if phi_shift_twopi:
                 angle_extension[angle_extension[:,1] < 0.0, 1] += 360
                 angle_force[angle_force[:,1] < 0.0, 1] += 360
             data[i] = np.c_[data[i], angle_extension, angle_force]
