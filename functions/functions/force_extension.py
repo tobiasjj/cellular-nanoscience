@@ -72,10 +72,10 @@ def angle(v1, v2):
     return math.acos(cos_theta)
 
 
-def _get_lateral_upper_speed_approx(tether, i, cycle=None):
+def _get_speed_approx(tether, i, cycle=None):
     cycle = 'stress' if cycle is None else cycle
     pair = tether.stress_release_pairs(i=i, info=True)
-    j = 0 if cycle is 'stress' else 1
+    j = 0 if cycle == 'stress' else 1
     idx = pair[j][0]
     ax = pair[2 + j][0,0]
     trace = {'x': 'positionX', 'y': 'positionY'}
@@ -155,8 +155,8 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
     bin_Ns = [None]*2
     for c, cycle in enumerate(['stress', 'release']):  # 0=stress, 1=release
         if resolution is None and bin_width is not None:
-            upper_speed = _get_lateral_upper_speed_approx(tether, i, cycle)
-            resolution = upper_speed / bin_width
+            speed = _get_speed_approx(tether, i, cycle)
+            resolution = speed / bin_width
         result = calculate_bin_means(data[c], bins=bins, resolution=resolution,
                                      sortcolumn=sortcolumn)
         (edges[c], centers[c], widths[c],
@@ -256,8 +256,8 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
     fbnl_filters = [[],[]]
     for c, cycle in enumerate(['stress', 'release']):  # 0=stress, 1=release
         if filter_time is None and filter_length is not None:
-            upper_speed = _get_lateral_upper_speed_approx(tether, i, cycle)
-            filter_time = filter_length / upper_speed  # s
+            speed = _get_speed_approx(tether, i, cycle)
+            filter_time = filter_length / speed  # s
             window = window_var = max(int(np.round(filter_time * resolution)), 1)
         for t in range(1, data[c].shape[1]):  # 1: extension, 2: force, 3: ...
             d = data[c][:, t]
