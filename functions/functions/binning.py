@@ -19,7 +19,8 @@
 import numpy as np
 
 
-def calculate_bin_means(data, bins=None, resolution=None, sortcolumn=0):
+def calculate_bin_means(data, bins=None, resolution=None, edges=None,
+                        sortcolumn=0):
     """
     Calculate binned means.
 
@@ -73,8 +74,15 @@ def calculate_bin_means(data, bins=None, resolution=None, sortcolumn=0):
     """
     if bins is None:
         bins = number_of_bins(data[:, sortcolumn], resolution)
-    # Create the bins based on data[:, sortcolumn]
-    edges, centers, width, nbins = get_edges(data[:, sortcolumn], bins)
+    if edges is None:
+        # Create the bins based on data[:, sortcolumn]
+        edges, centers, width, nbins = get_edges(data[:, sortcolumn], bins)
+    else:
+        widths = edges[1:] - edges[:-1]
+        centers = widths / 2 + edges[:-1]
+        width = widths.mean()
+        nbins = len(centers)
+
     # get first dim, i.e. the sortcolumn
     edges, centers, width = edges[0], centers[0], width[0]
 
