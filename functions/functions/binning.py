@@ -72,9 +72,9 @@ def calculate_bin_means(data, bins=None, resolution=None, edges=None,
     -------
     edges, centers, width, bin_means, bin_stds, bin_Ns
     """
-    if bins is None:
-        bins = number_of_bins(data[:, sortcolumn], resolution)
     if edges is None:
+        if bins is None:
+            bins = number_of_bins(data[:, sortcolumn], resolution)
         # Create the bins based on data[:, sortcolumn]
         edges, centers, width, nbins = get_edges(data[:, sortcolumn], bins)
         # get first dim, i.e. the sortcolumn
