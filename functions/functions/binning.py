@@ -78,10 +78,8 @@ def calculate_bin_means(data, bins=None, resolution=None, edges=None,
         # Create the bins based on data[:, sortcolumn]
         edges, centers, width, nbins = get_edges(data[:, sortcolumn], bins)
     else:
-        widths = edges[1:] - edges[:-1]
-        centers = widths / 2 + edges[:-1]
-        width = widths.mean()
-        nbins = len(centers)
+        width = edges[1:] - edges[:-1]
+        centers = width / 2 + edges[:-1]
 
     # get first dim, i.e. the sortcolumn
     edges, centers, width = edges[0], centers[0], width[0]
