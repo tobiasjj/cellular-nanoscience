@@ -77,12 +77,11 @@ def calculate_bin_means(data, bins=None, resolution=None, edges=None,
     if edges is None:
         # Create the bins based on data[:, sortcolumn]
         edges, centers, width, nbins = get_edges(data[:, sortcolumn], bins)
+        # get first dim, i.e. the sortcolumn
+        edges, centers, width = edges[0], centers[0], width[0]
     else:
         width = edges[1:] - edges[:-1]
         centers = width / 2 + edges[:-1]
-
-    # get first dim, i.e. the sortcolumn
-    edges, centers, width = edges[0], centers[0], width[0]
 
     # Get the indices of the bins to which each value in input array belongs.
     bin_idx = np.digitize(data[:, sortcolumn], edges)
