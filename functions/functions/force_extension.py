@@ -16,18 +16,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from matplotlib import pyplot as plt
-from IPython.display import display
-from ipywidgets import Label, interactive_output, Checkbox, IntText, BoundedIntText, FloatText, HBox, VBox
-from .binning import calculate_bin_means
-from stepfinder import filter_fbnl
-import unzipping_simulation as uzsi
+import collections
+import itertools
 import math
 import numpy as np
 import os
-import collections
-import itertools
+import unzipping_simulation as uzsi
 
+from IPython.display import display
+from ipywidgets import Label, interactive_output, Checkbox, IntText, BoundedIntText, FloatText, HBox, VBox
+from matplotlib import pyplot as plt
+from stepfinder import filter_fbnl
+
+from .binning import calculate_bin_means
 
 def cart2sph(x, y, z, offset_phi=0, positive_phi=False):
     """
@@ -248,14 +249,17 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
 
     # Filter the data and plot the result
     resolution = tether.resolution
-    if filter_length is None:
-        filter_time = 0.005 if filter_time is None else filter_time
-        window = window_var = max(int(np.round(filter_time * resolution)), 1)
+    if filter_time is None:
+        filter_time = 0.005
+    else:
+        # filter_time has priority over filter_length
+        filter_length = None
+    window = window_var = max(int(np.round(filter_time * resolution)), 1)
     cap_data = True
 
     fbnl_filters = [[],[]]
     for c, cycle in enumerate(['stress', 'release']):  # 0=stress, 1=release
-        if filter_time is None and filter_length is not None:
+        if filter_length is not None:
             speed = _get_speed_approx(tether, i, cycle)
             filter_time = filter_length / speed  # s
             window = window_var = max(int(np.round(filter_time * resolution)), 1)
@@ -698,13 +702,10 @@ def get_simulation(tether, i, settings_file, posZ=None, individual_posZ=False,
     return simulation
 
 
-def plot_unzip_data(tether, I, ax=None,
-                    sortcolumn=0, resolution=500, fbnl=False,
-                    filter_time=0.001, edginess=1,
-                    shift_x=0e-9, t_delta=15,
+def plot_unzip_data(tether, I, ax=None, fbnl=False, shift_x=0e-9, t_delta=15,
                     plot_stress=True, plot_release=True, plot_raw=False,
                     annotate_stress=True, annotate_release=True,
-                    simulation=None):
+                    simulation=None, **filter_kwargs):
     """
     i : int or list of ints
         the force extension data to be plotted
@@ -749,12 +750,12 @@ def plot_unzip_data(tether, I, ax=None,
         ### Get and plot force extension curve and simulation
         if fbnl:
             # Get fbnl_filter filtered force extension
-            result = fbnl_force_extension(tether, i, filter_time=filter_time, edginess=edginess)
+            result = fbnl_force_extension(tether, i, **filter_kwargs)
             filtered_data, fbnl_filters = result  # 0: stress, 1: release
         else:
             # Get binned force extension
             bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns \
-                = binned_force_extension(tether, i, resolution=resolution, sortcolumn=sortcolumn)
+                = binned_force_extension(tether, i, **filter_kwargs)
             filtered_data = bin_means  # 0: stress, 1: release
 
         # Get tmin and tmax from the first stress and the last release cycle datapoint
