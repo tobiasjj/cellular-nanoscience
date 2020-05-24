@@ -669,8 +669,8 @@ def get_simulation(tether, i, settings_file, posZ=None, individual_posZ=False,
     settings_file : str
         The filepath of the settings file for the simulation
     individual_posZ : bool
-        Calculate the median of the distance of the microsphere to the surface from
-        positionZ for each individual segment or the whole tether.region.
+        Calculate the median of the distance of the microsphere to the surface
+        from positionZ for each individual segment or the whole tether.region.
     posZ : float
         Set the positionZ manually (m).
     """
@@ -683,7 +683,7 @@ def get_simulation(tether, i, settings_file, posZ=None, individual_posZ=False,
         if individual_posZ:
             idx = tether.samples(i, cycle='stress')
         posZ = np.median(tether.get_data('positionZ', samples=idx))
-    h0 = max(0.0, - posZ * tether.calibration.focalshift)
+        h0 = max(0.0, -posZ * tether.calibration.focalshift)
 
     # Get kappa for excited axis and axis Z
     kappa = tether.calibration.kappa(posZ) if kappa is None else kappa
