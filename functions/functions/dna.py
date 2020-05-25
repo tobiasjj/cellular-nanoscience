@@ -17,11 +17,12 @@
 # limitations under the License.
 
 import numpy as np
-import operator
+
 from collections import namedtuple
 from lmfit import minimize, Parameters, fit_report
 from scipy import constants
 
+from .helpers import crop_x_y
 
 k_B = constants.value('Boltzmann constant')
 ForceExtension = namedtuple('ForceExtension', ['extension', 'force'])
@@ -192,91 +193,6 @@ def twistable_force_extension(bps, pitch=0.338e-9, L_p=43.3e-9, K_0=1246e-12,
     x = twistable_wlc(F, L_0, L_p, K_0, S, C, T)
 
     return ForceExtension(extension=x, force=F)
-
-
-def crop_x_y_idx(x, y=None, min_x=None, max_x=None, min_y=None, max_y=None,
-                 include_bounds=True):
-    """
-    Crop pairs of variates according to their minimum and maximum values.
-
-    Parameters
-    ----------
-    x : 1D numpy.ndarray of type float
-        The x values.
-    y : 1D numpy.ndarray of type float
-        The y values.
-    min_x : float
-        The minimum value of `x`.
-    max_x : float
-        The maximum value of `x`.
-    min_y : float
-        The minimum value of `y`.
-    max_y : float
-        The maximum value of `y`.
-    include_bounds : bool
-        Whether to include or exlude min/max values in the output arrays.
-
-    Returns
-    -------
-    index array of type bool
-        The index of the values to not be cropped (i.e. value is True).
-    """
-    # Reduce calculation time, if no min/max values are given
-    if min_x is None and max_x is None and min_y is None and max_y is None:
-        idx = np.ones_like(x, dtype=bool)
-        return idx
-    if include_bounds:
-        ol = operator.le
-        og = operator.ge
-    else:
-        ol = operator.lt
-        og = operator.gt
-    max_x = max_x or float('inf')
-    min_x = min_x or float('-inf')
-    i_x = ol(x, max_x)
-    i_x = np.logical_and(i_x, og(x, min_x))
-    if y is None:
-        return i_x
-    max_y = max_y or float('inf')
-    min_y = min_y or float('-inf')
-    i_y = ol(y, max_y)
-    i_y = np.logical_and(i_y, og(y, min_y))
-    idx = np.logical_and(i_x, i_y)
-    return idx
-
-
-def crop_x_y(x, y=None, min_x=None, max_x=None, min_y=None, max_y=None,
-             include_bounds=True):
-    """
-    Crop pairs of variates according to their minimum and maximum values.
-
-    Parameters
-    ----------
-    x : 1D numpy.ndarray of type float
-        The x values.
-    y : 1D numpy.ndarray of type float
-        The y values.
-    min_x : float
-        The minimum value of `x`.
-    max_x : float
-        The maximum value of `x`.
-    min_y : float
-        The minimum value of `y`.
-    max_y : float
-        The maximum value of `y`.
-    include_bounds : bool
-        Whether to include or exlude min/max values in the output arrays.
-
-    Returns
-    -------
-    tuple of 2 1D numpy.ndarray of type float
-        The cropped values (x, y).
-    """
-    idx = crop_x_y_idx(x, y, min_x, max_x, min_y, max_y, include_bounds)
-    if y is None:
-        return x[idx]
-    else:
-        return x[idx], y[idx]
 
 
 def residual(params, model_func, x, data, min_x_param=None, max_x_param=None,

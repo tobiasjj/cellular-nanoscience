@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from scipy.integrate import simps, cumtrapz
 
-from .dna import crop_x_y_idx
+from .helpers import get_crop_idx
 from .force_extension import binned_force_extension, fbnl_force_extension, \
                              get_simulation
 from .helpers import suppress_stdout
@@ -215,27 +215,41 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     return data
 
 
-def fe_crop_sort_idx(cycle_data, cycle='stress', min_x=None, max_x=None,
-                              min_f=None, max_f=None, include_bounds=True):
+def fe_sort_crop_idx(cycle_data, cycle='stress', min_x=None, max_x=None,
+                     min_f=None, max_f=None, include_bounds=True, first_f=None,
+                     last_f=None, switch_min_f=None, continuous_f=False):
     x = cycle_data[cycle]['extension']
-    y = cycle_data[cycle]['force']
-    idx_crop = crop_x_y_idx(x, y, min_x=min_x, max_x=max_x, min_y=min_f,
-                            max_y=max_f, include_bounds=include_bounds)
-    idx_sort = x[idx_crop].argsort()
-    idx_crop = np.where(idx_crop)[0]
-    idx = idx_crop[idx_sort]
+    f = cycle_data[cycle]['force']
+
+    idx_sort = x.argsort()
+
+    idx_x = get_crop_idx(
+        x[idx_sort], min_x=min_x, max_x=max_x, include_bounds=include_bounds)
+    idx_f = get_crop_idx(
+        f[idx_sort], min_x=min_f, max_x=max_f, include_bounds=include_bounds,
+        first_x=first_f, last_x=last_f, switch_min_x=switch_min_f,
+        continuous_x=continuous_f)
+    idx_crop = np.logical_and(idx_x['idx_crop'], idx_f['idx_crop'])
+
+    idx_sort_crop = idx_sort[idx_crop]
 
     return_value = {
-        'idx_crop': idx_crop,
         'idx_sort': idx_sort,
-        'idx': idx,
+        'idx_x': idx_x,
+        'idx_f': idx_f,
+        'idx_crop': idx_crop,
+        'idx_sort_crop': idx_sort_crop,
         'settings': {
             'cycle': cycle,
             'min_x': min_x,
             'max_y': max_x,
             'min_f': min_f,
             'max_f': max_f,
-            'include_bounds': include_bounds
+            'include_bounds': include_bounds,
+            'first_f': first_f,
+            'last_f': last_f,
+            'switch_min_f': switch_min_f,
+            'continuous_f': continuous_f
         }
     }
 
@@ -243,7 +257,9 @@ def fe_crop_sort_idx(cycle_data, cycle='stress', min_x=None, max_x=None,
 
 
 def fe_area(cycle_data, cycle='stress', integration_f=None, min_x=None,
-            max_x=None, min_f=None, max_f=None, include_bounds=True):
+            max_x=None, min_f=None, max_f=None, include_bounds=True,
+            first_f=None, last_f=None, switch_min_f=None,
+            continuous_f=False):
     f_integration = {
         'simps': simps,
         'trapz': np.trapz,
@@ -255,20 +271,22 @@ def fe_area(cycle_data, cycle='stress', integration_f=None, min_x=None,
     f_int = f_integration.get(integration_f, np.trapz)
     f_kwargs = f_integration_kwargs.get(integration_f, {})
 
-    _idx = fe_crop_sort_idx(cycle_data, cycle=cycle, min_x=min_x, max_x=max_x,
+    idxs = fe_sort_crop_idx(cycle_data, cycle=cycle, min_x=min_x, max_x=max_x,
                             min_f=min_f, max_f=max_f,
-                            include_bounds=include_bounds)
-    idx = _idx['idx']
+                            include_bounds=include_bounds, first_f=first_f,
+                            last_f=last_f, switch_min_f=switch_min_f,
+                            continuous_f=continuous_f)
+    idx = idxs['idx_sort_crop']
     x = cycle_data[cycle]['extension'][idx]
     y = cycle_data[cycle]['force'][idx]
     area = f_int(y, x, **f_kwargs)
 
     return_value = {
         'area': area,
-        'idx': _idx,
         'settings': {
             'integration_f': integration_f or 'trapz',
-        }
+        },
+        'idxs': idxs
     }
 
     return return_value
