@@ -19,8 +19,7 @@
 import numpy as np
 
 
-def calculate_bin_means(data, bins=None, resolution=None, edges=None,
-                        sortcolumn=0):
+def calculate_bin_means(data, bins=None, resolution=None, sortcolumn=0):
     """
     Calculate binned means.
 
@@ -67,21 +66,21 @@ def calculate_bin_means(data, bins=None, resolution=None, edges=None,
         ‘sqrt’
             Square root (of data size) estimator, used by Excel and other
             programs for its speed and simplicity.
+    resolution: float
+        Resolution in values of `sortcolumn`. Used to calculate the number of
+        bins needed for the specified resolution. Only evaluated if `edges` and
+        `bins` is None.
 
     Returns
     -------
     edges, centers, width, bin_means, bin_stds, bin_Ns
     """
-    if edges is None:
-        if bins is None:
-            bins = number_of_bins(data[:, sortcolumn], resolution)
-        # Create the bins based on data[:, sortcolumn]
-        edges, centers, width, nbins = get_edges(data[:, sortcolumn], bins)
-        # get first dim, i.e. the sortcolumn
-        edges, centers, width = edges[0], centers[0], width[0]
-    else:
-        width = edges[1:] - edges[:-1]
-        centers = width / 2 + edges[:-1]
+    if bins is None:
+        bins = number_of_bins(data[:, sortcolumn], resolution)
+    # Create the bins based on data[:, sortcolumn]
+    edges, centers, width, nbins = get_edges(data[:, sortcolumn], bins)
+    # get first dim, i.e. the sortcolumn
+    edges, centers, width = edges[0], centers[0], width[0]
 
     # Get the indices of the bins to which each value in input array belongs.
     bin_idx = np.digitize(data[:, sortcolumn], edges)
@@ -207,11 +206,11 @@ def get_edges(data, bins=None):
 
     Parameters
     ----------
-    bins : int or sequence of scalars or str, optional
+    bins : int or sequence of scalars, str or sequence of floats, optional
         If bins is an int, it defines the number of equal-width bins in the
-        given range ('auto', by default). If bins is a sequence, it defines the
-        bin edges, including the rightmost edge, allowing for non-uniform bin
-        widths.
+        given range ('auto', by default). If bins is a sequence of sequences,
+        it defines the bin edges, including the rightmost edge, for every
+        dimension of data, allowing for non-uniform bin widths.
 
         If bins is a string from the list below, histogram_bin_edges will use
         the method chosen to calculate the optimal bin width and consequently
@@ -253,28 +252,30 @@ def get_edges(data, bins=None):
     -------
     edges, centers, widths, nbins
     """
+    # data has one dimension, make it 2D and add one dimension to bins
+    extend = False
+    if np.ndim(data) == 1:
+        data = np.atleast_2d(data).T
+        extend = True
+    N, D = data.shape
+
+    # Default to 'auto' number of bins
     if bins is None:
         bins = 'auto'
 
-    if np.ndim(data) == 1:
-        data = np.atleast_2d(data).T
-    N, D = data.shape
-
-    # bins is a str
-    if isinstance(bins, str):
+    # bins is a str, an int, or data was extended by one dimension and bins
+    # are defining the edges. Create number of bins for each dimension of data.
+    if isinstance(bins, str) or isinstance(bins, int) or extend:
         bins = D*[bins]
 
-    try:
-        M = len(bins)
-        if M != D:
-            raise ValueError(
-                'The dimension of bins must be equal to the dimension of the '
-                ' sample x.')
-    except TypeError:
-        # bins is an int
-        bins = D*[bins]
+    # Check if for every dimension in data there is one number of bins
+    T = len(bins)
+    if T != D:
+        raise ValueError(
+            'The dimension of bins must be equal to the dimension of the '
+            'sample x.')
 
-    # Create edge arrays
+    # Create edges arrays
     nbins = np.empty(D, int)
     edges = D*[None]
     centers = D*[None]
@@ -282,18 +283,18 @@ def get_edges(data, bins=None):
 
     for i in range(D):
         if np.ndim(bins[i]) == 0:
-            # bins[i] is an int or a str
+            # bins[i] is a str or an int
             edges[i] = np.histogram_bin_edges(data[:, i], bins[i])
         elif np.ndim(bins[i]) == 1:
-            # bins[i] is a sequence
+            # bins[i] is a sequence and defines the edges
             edges[i] = np.asarray(bins[i])
             if np.any(edges[i][:-1] > edges[i][1:]):
                 raise ValueError(
-                   '`bins[{}]` must be monotonically increasing, when an array'
-                   .format(i))
+                   '`bins[{}]` must be monotonically increasing, when defining '
+                    'edges.'.format(i))
         else:
             raise ValueError(
-                '`bins[{}]` must be a scalar or 1d array'.format(i))
+                '`bins[{}]` must be a scalar or an 1D array.'.format(i))
         nbins[i] = len(edges[i]) - 1
         widths[i] = edges[i][1] - edges[i][0]
         centers[i] = edges[i][0:-1] + widths[i] / 2
@@ -305,8 +306,6 @@ def number_of_bins(data, resolution=None):
     """
     Calculate the number of bins for requested resolution of the data
 
-    If resolution is <= 0 this function returns None.
-
     Parameters
     ----------
     data : numpy.ndarray of type float
@@ -315,7 +314,7 @@ def number_of_bins(data, resolution=None):
     Returns
     -------
     bins : None or int
-        Number of bins
+        Number of bins. If `resolution` <= 0 returns None.
     """
     if resolution is None:
         return None
