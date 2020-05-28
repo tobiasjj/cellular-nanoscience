@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from scipy.integrate import simps, cumtrapz
 
-from .helpers import get_crop_idx
+from .helpers import compare_idx, min_max_idx, step_idx
 from .force_extension import binned_force_extension, fbnl_force_extension, \
                              get_simulation
 from .helpers import suppress_stdout
@@ -126,14 +126,14 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     if fbnl:
         processing_function = fbnl_force_extension
         process_kwargs = dict(
-                filter_length=5e-9,  # m
+                filter_length_e=5e-9,  # m
                 edginess=1,  # int
                 angles_after_filter=angles_after_processing)
         result_data_idx = 0  #data_filtered, fbnl_filters = result  # 0: stress, 1: release
     else:
         processing_function = binned_force_extension
         process_kwargs = dict(
-            bin_width=5e-9,  # m
+            bin_width_e=5e-9,  # m
             sortcolumn=0,  # 0: time, 1: extension
             angles_after_binning=angles_after_processing)
         result_data_idx = 3  #bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns = result
@@ -157,7 +157,7 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     axis = {'x': 0, 'y': 1}
     ax = t.stress_release_pairs(i=i, info=True)[2][0,0]
     excited_axis = axis[ax]
-    print('\rGet simulation for cycle i = {} ...'.format(i), end='',
+    print('Get simulation for cycle i = {} ...\r'.format(i), end='',
           flush=True)
     simulation = get_simulation(t, i, simulation_settings_file, posZ=posZ,
                                 individual_posZ=individual_posZ,
@@ -215,78 +215,95 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     return data
 
 
-def fe_sort_crop_idx(cycle_data, cycle='stress', min_x=None, max_x=None,
-                     min_f=None, max_f=None, include_bounds=True, first_f=None,
-                     last_f=None, switch_min_f=None, continuous_f=False):
+def add_idcs(cycle_data, cycle=None, **kwargs):
+    if cycle is None:
+        cycles = ['stress', 'release', 'simulation']
+    else:
+        cycles = [cycle]
+    for cycle in cycles:
+        cycle_data[cycle]['idcs'] = get_idcs(cycle_data, cycle=cycle, **kwargs)
+    return cycle_data
+
+
+def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
+             include_bounds=True, threshold_f=None, max_length_x=None):
     x = cycle_data[cycle]['extension']
     f = cycle_data[cycle]['force']
 
     idx_sort = x.argsort()
+    xs = x[idx_sort]
+    fs = f[idx_sort]
 
-    idx_x = get_crop_idx(
-        x[idx_sort], min_x=min_x, max_x=max_x, include_bounds=include_bounds)
-    idx_f = get_crop_idx(
-        f[idx_sort], min_x=min_f, max_x=max_f, include_bounds=include_bounds,
-        first_x=first_f, last_x=last_f, switch_min_x=switch_min_f,
-        continuous_x=continuous_f)
-    idx_crop = np.logical_and(idx_x['idx_crop'], idx_f['idx_crop'])
+    idx_x = min_max_idx(
+        xs, min_x=min_x, max_x=max_x, include_bounds=include_bounds)
+    #idx_f = min_max_idx(
+    #    f[idx_sort], min_x=min_f, max_x=max_f, include_bounds=include_bounds)
+    idx_f = step_idx(fs, threshold_f, include_bounds=include_bounds)
+    idx_crop = np.logical_and(idx_x, idx_f)
+
+    first_x = xs[idx_crop][0]
+    idx_length_x = compare_idx(xs - first_x, max_length_x, comparison='less')
+    idx_crop = np.logical_and(idx_crop, idx_length_x)
 
     idx_sort_crop = idx_sort[idx_crop]
+    idx_crop = idx_sort_crop.copy()
+    idx_crop.sort()
 
     return_value = {
-        'idx_sort': idx_sort,
-        'idx_x': idx_x,
-        'idx_f': idx_f,
-        'idx_crop': idx_crop,
-        'idx_sort_crop': idx_sort_crop,
+        'crop': idx_crop,
+        'xsort': idx_sort,
+        'xsort_crop': idx_sort_crop,
+        'x': idx_x,
+        'f': idx_f,
         'settings': {
             'cycle': cycle,
             'min_x': min_x,
             'max_y': max_x,
-            'min_f': min_f,
-            'max_f': max_f,
             'include_bounds': include_bounds,
-            'first_f': first_f,
-            'last_f': last_f,
-            'switch_min_f': switch_min_f,
-            'continuous_f': continuous_f
+            'threshold_f': threshold_f,
+            'max_length_x': max_length_x
         }
     }
 
     return return_value
 
 
-def fe_area(cycle_data, cycle='stress', integration_f=None, min_x=None,
-            max_x=None, min_f=None, max_f=None, include_bounds=True,
-            first_f=None, last_f=None, switch_min_f=None,
-            continuous_f=False):
-    f_integration = {
+def add_area(cycle_data, cycle=None):
+    if cycle is None:
+        cycles = ['stress', 'release', 'simulation']
+    else:
+        cycles = [cycle]
+    for cycle in cycles:
+        cycle_data[cycle]['area'] = get_area(cycle_data, cycle=cycle,
+                                             integration_type='trapz')
+        cycle_data[cycle]['cumarea'] = get_area(cycle_data, cycle=cycle,
+                                                integration_type='cumtrapz')
+    return cycle_data
+
+
+def get_area(cycle_data, cycle='stress', integration_type=None):
+    integration_fs = {
         'simps': simps,
         'trapz': np.trapz,
         'cumtrapz': cumtrapz
     }
-    f_integration_kwargs = {
+    integration_kwargs = {
         'cumtrapz': { 'initial': 0 }
     }
-    f_int = f_integration.get(integration_f, np.trapz)
-    f_kwargs = f_integration_kwargs.get(integration_f, {})
+    f = integration_fs.get(integration_type, np.trapz)
+    if integration_type not in integration_fs:
+        integration_type = 'trapz'
+    f_kwargs = integration_kwargs.get(integration_type, {})
 
-    idxs = fe_sort_crop_idx(cycle_data, cycle=cycle, min_x=min_x, max_x=max_x,
-                            min_f=min_f, max_f=max_f,
-                            include_bounds=include_bounds, first_f=first_f,
-                            last_f=last_f, switch_min_f=switch_min_f,
-                            continuous_f=continuous_f)
-    idx = idxs['idx_sort_crop']
+    idx = cycle_data[cycle]['idcs']['xsort_crop']
     x = cycle_data[cycle]['extension'][idx]
     y = cycle_data[cycle]['force'][idx]
-    area = f_int(y, x, **f_kwargs)
+    area = f(y, x, **f_kwargs)
 
     return_value = {
-        'area': area,
-        'settings': {
-            'integration_f': integration_f or 'trapz',
-        },
-        'idxs': idxs
+        'value': area,
+        'type': integration_type,
+        'idx': idx
     }
 
     return return_value
