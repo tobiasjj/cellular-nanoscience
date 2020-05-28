@@ -34,10 +34,8 @@ def suppress_stdout():
         finally:
             sys.stdout = old_stdout
 
-
-def get_crop_idx(x, min_x=None, max_x=None, include_bounds=True, first_x=None,
-                 last_x=None, switch_min_x=None, switch_max_x=None,
-                 continuous_x=False):
+def min_max_idx(x, min_x=None, max_x=None, include_bounds=True,
+                detailed=False):
     """
     Parameters
     ----------
@@ -49,95 +47,79 @@ def get_crop_idx(x, min_x=None, max_x=None, include_bounds=True, first_x=None,
         The maximum value of `x`.
     include_bounds : bool
         Whether to include or exlude min/max values in the output array
-    first_x: str
-        The first index to be included. Possible values are: 'first_min',
-        'last_min', 'first_max', or 'last_max'.
-    last_x: str
-        The last index to be included. Possible values are: 'first_min',
-        'last_min', 'first_max', or 'last_max'.
-    continuous_x: bool
-        Include all indices between the first and the last possible index.
 
     Returns
     -------
     dict with indices
-        The index of the values to not be cropped (i.e. value is True).
+        The indices of the values to not be cropped (i.e. value is True).
     """
-    length_x = len(x)
-    # Reduce calculation time, if no min/max values are given
-    if min_x is None and max_x is None:
-        idx = np.ones_like(x, dtype=bool)
-        return_values = {
-            'first_min': 0,
-            'last_min': length_x - 1,
-            'first_max': 0,
-            'last_max': length_x - 1,
-            'idx_min_max': idx,
-            'idx_crop': idx
+    # Select values with min < value < max:
+    idx_min = compare_idx(x, min_x, 'greater', include_bounds=include_bounds)
+    idx_max = compare_idx(x, max_x, 'less', include_bounds=include_bounds)
+    idx_min_max = np.logical_and(idx_min, idx_max)
+
+    if detailed:
+        return_value = {
+            'min_max': idx_min_max,
+            'min': idx_min,
+            'max': idx_max,
         }
     else:
-        if include_bounds:
-            og = operator.ge
-            ol = operator.le
-        else:
-            og = operator.gt
-            ol = operator.lt
-        min_x = min_x or float('-inf')
-        max_x = max_x or float('inf')
-        switch_min_x = switch_min_x or float('inf')
-        switch_max_x = switch_max_x or float('-inf')
-        i_min_x = og(x, min_x)
-        i_max_x = ol(x, max_x)
-        idx_min_max = np.logical_and(i_min_x, i_max_x)
-        i_on_min_x = og(x, switch_min_x)
-        i_on_max_x = ol(x, switch_max_x)
-        i_on_x = np.logical_or(i_on_min_x, i_on_max_x)
+        return_value = idx_min_max
 
-        # Calculate first and last index of values above min and values below
-        # max.
-        # Ignore values after first time above ignore_switch_min
-        def get_first_last_idx(i_bool):
-            length = len(i_bool)
-            i_first = np.argmax(i_bool)
-            i_last = length - 1 - np.argmax(i_bool[::-1])
-            i_not_last = length - 1 - np.argmax(np.logical_not(i_bool[::-1]))
-            return i_first, i_last, i_not_last
+    return return_value
 
-        if np.any(i_on_x):
-            i_first_on = get_first_last_idx(i_on_x)[0]
-        else:
-            i_first_on = length_x - 1
-        i_first_min, i_last_min, i_last_not_min \
-            = get_first_last_idx(i_min_x[:i_first_on + 1])
-        i_first_max, i_last_max, i_last_not_max \
-            = get_first_last_idx(i_max_x[:i_first_on + 1])
-        return_values = {
-            'first_min': i_first_min,
-            'first_max': i_first_max,
-            'last_min': i_last_not_min + 1,
-            'last_max': i_last_not_max + 1
-        }
 
-        # Determine start and stop index
-        i_first_min_max, i_last_min_max = get_first_last_idx(idx_min_max)[:2]
-        start_x = return_values.get(first_x, i_first_min_max)
-        stop_x = return_values.get(last_x, i_last_min_max) + 1
+_fu = {
+    True: {
+        'less': operator.le,
+        'equal': operator.eq,
+        'greater': operator.ge
+    },
+    False: {
+        'less': operator.lt,
+        'equal': operator.ne,
+        'greater': operator.gt
+}}
+_va = {
+    'less': float('inf'),
+    'equal': 0.0,
+    'greater': float('-inf')
+}
+def compare_idx(x, y=None, comparison='greater', include_bounds=True):
+    f = _fu[include_bounds][comparison]
+    y = _va[comparison] if y is None else y
+    return f(x, y)
 
-        return_values['idx_min_max'] = idx_min_max
 
-        idx = idx_min_max.copy()
-        idx[:start_x] = False
-        idx[stop_x:] = False
-        if continuous_x:
-            idx[start_x:stop_x] = True
-        return_values['idx_crop'] = idx
+def step_idx(x, threshold, comparison='greater', include_bounds=True):
+    idx = compare_idx(x, threshold, comparison, include_bounds=include_bounds)
+    if np.any(idx):
+        i_first = first_last_idx(idx)[0]
+        idx[i_first:] = True
+    return idx
 
-    return return_values
+
+def first_last_idx(idx_bool):
+    # Get first and last index of values above min and values below max.
+    length = len(idx_bool)
+    i_first = np.argmax(idx_bool)
+    i_last = length - 1 - np.argmax(idx_bool[::-1])
+    return i_first, i_last
+
+
+def make_contiguous_idx(idx_bool):
+    # Make selection contiguous
+    idx = idx_bool.copy()
+    i_first, i_last = first_last_idx(idx)
+    start = i_first
+    stop = i_last + 1
+    idx[start:stop] = True
+    return idx
 
 
 def crop_x_y_idx(x, y=None, min_x=None, max_x=None, min_y=None, max_y=None,
-                 include_bounds=True, first_x=None, last_x=None, first_y=None,
-                 last_y=None, continuous_x=False, continuous_y=False):
+                 include_bounds=True):
     """
     Crop pairs of variates according to their minimum and maximum values.
 
@@ -163,20 +145,17 @@ def crop_x_y_idx(x, y=None, min_x=None, max_x=None, min_y=None, max_y=None,
     index array of type bool
         The index of the values to not be cropped (i.e. value is True).
     """
-    idx_x = get_crop_idx(
-        x, min_x=min_x, max_x=max_x, include_bounds=include_bounds,
-        first_x=first_x, last_x=last_x, continuous_x=continuous_x)
-    idx_y = get_crop_idx(
-        y, min_x=min_y, max_x=max_y, include_bounds=include_bounds,
-        first_x=first_y, last_x=last_y, continuous_x=continuous_y)
+    idx_x = min_max_idx(
+        x, min_x=min_x, max_x=max_x, include_bounds=include_bounds)
+    idx_y = min_max_idx(
+        y, min_x=min_y, max_x=max_y, include_bounds=include_bounds)
 
-    idx = np.logical_and(idx_x['idx_crop'], idx_y['idx_crop'])
+    idx = np.logical_and(idx_x, idx_y)
     return idx
 
 
 def crop_x_y(x, y=None, min_x=None, max_x=None, min_y=None, max_y=None,
-             include_bounds=True, first_x=None, last_x=None, first_y=None,
-             last_y=None, continuous_x=False, continuous_y=False):
+             include_bounds=True):
     """
     Crop pairs of variates according to their minimum and maximum values.
 
@@ -203,10 +182,7 @@ def crop_x_y(x, y=None, min_x=None, max_x=None, min_y=None, max_y=None,
         The cropped values (x, y).
     """
     idx = crop_x_y_idx(x, y=y, min_x=min_x, max_x=max_x, min_y=min_y,
-                       max_y=max_y, include_bounds=include_bounds,
-                       first_x=first_x, last_x=last_x, first_y=first_y,
-                       last_y=last_y, continuous_x=continuous_x,
-                       continuous_y=continuous_y)
+                       max_y=max_y, include_bounds=include_bounds)
     if y is None:
         return x[idx]
     else:
