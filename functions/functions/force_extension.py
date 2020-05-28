@@ -88,7 +88,7 @@ def _get_speed_approx(tether, i, cycle=None):
 
 
 def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
-                           bin_width=None, sortcolumn=0, fXYZ_factors=None,
+                           bin_width_e=None, sortcolumn=0, fXYZ_factors=None,
                            angles=False, extra_traces=None,
                            angles_after_binning=False, phi_shift_twopi=False):
     """
@@ -98,8 +98,12 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
         number of bins, takes precedence over resolution
     resolution : float
         number of bins per unit of sortcolumn.
-    bin_width : float
-        Approximate width of bins in m. Only evaluated if resolution is None.
+    bin_width_e : float
+        Width of bins of extension in m. Only evaluated if bins and resolution
+        are None. A resolution (s) is calculated by dividing the bin_width_e
+        with an approximate speed of the positionXY signal. Therefore, if
+        bin_width_e is evaluated, the sortcolumn is automatically set to 0
+        (i.e. time).
     sortcolumn : int
         0: time, 1: extension, 2: force, n >= 3: angles and/or extra_columns
     angles : bool
@@ -155,9 +159,10 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
     bin_stds = [None]*2
     bin_Ns = [None]*2
     for c, cycle in enumerate(['stress', 'release']):  # 0=stress, 1=release
-        if resolution is None and bin_width is not None:
+        if bins is None and resolution is None and bin_width_e is not None:
             speed = _get_speed_approx(tether, i, cycle)
-            resolution = speed / bin_width
+            resolution = speed / bin_width_e
+            sortcolumn = 0
         result = calculate_bin_means(data[c], bins=bins, resolution=resolution,
                                      sortcolumn=sortcolumn)
         (edges[c], centers[c], widths[c],
@@ -181,7 +186,7 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
 
 
 def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
-                         filter_length=None, edginess=1, fXYZ_factors=None,
+                         filter_length_e=None, edginess=1, fXYZ_factors=None,
                          angles=False, extra_traces=None,
                          angles_after_filter=False, phi_shift_twopi=False):
     """
@@ -189,10 +194,10 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
     ----------
     filter_time : float
         time of running filter in s
-    filter_length : float
-        Length of running filter in m. Only evaluated if filter_time is None.
-    sortcolumn : int
-        0: time, 1: extension, 2: force, n >= 3: angles and/or extra_columns
+    filter_length_e : float
+        Length of running filter of extension in m. Only evaluated if
+        filter_time is None. A filter_time (s) is calculated by dividing the
+        filter_length_e with an approximate speed of the positionXY signal.
     angles : bool
         Calculate theta and phi for extension and force.
         3: theta_extension, 4: phi_extension, 5: theta_force, 6: phi_force,
@@ -253,15 +258,15 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
         filter_time = 0.005
     else:
         # filter_time has priority over filter_length
-        filter_length = None
+        filter_length_e = None
     window = window_var = max(int(np.round(filter_time * resolution)), 1)
     cap_data = True
 
     fbnl_filters = [[],[]]
     for c, cycle in enumerate(['stress', 'release']):  # 0=stress, 1=release
-        if filter_length is not None:
+        if filter_length_e is not None:
             speed = _get_speed_approx(tether, i, cycle)
-            filter_time = filter_length / speed  # s
+            filter_time = filter_length_e / speed  # s
             window = window_var = max(int(np.round(filter_time * resolution)), 1)
         for t in range(1, data[c].shape[1]):  # 1: extension, 2: force, 3: ...
             d = data[c][:, t]
