@@ -290,8 +290,8 @@ def get_edges(data, bins=None):
             edges[i] = np.asarray(bins[i])
             if np.any(edges[i][:-1] > edges[i][1:]):
                 raise ValueError(
-                   '`bins[{}]` must be monotonically increasing, when defining '
-                    'edges.'.format(i))
+                    '`bins[{}]` must be monotonically increasing, when '
+                    'defining edges.'.format(i))
         else:
             raise ValueError(
                 '`bins[{}]` must be a scalar or an 1D array.'.format(i))
