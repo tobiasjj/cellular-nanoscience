@@ -26,7 +26,7 @@ from stepfinder import filter_fbnl
 def filter_fbnl_data(data, resolution, filter_time=0.005, edginess=1):
     # Filter the data
     window = window_var = max(int(np.round(filter_time * resolution)), 1)
-    cap_data = True
+    pad_data = True
 
     if data.ndim == 1:
         data = data[np.newaxis].T
@@ -36,7 +36,7 @@ def filter_fbnl_data(data, resolution, filter_time=0.005, edginess=1):
         d = data[:, t]
         fbnl_filter = filter_fbnl(d, resolution, window=window,
                                   window_var=window_var, p=edginess,
-                                  cap_data=cap_data)
+                                  pad_data=pad_data)
         filtered_data[:, t] = fbnl_filter.data_filtered
         fbnl_filters[t] = fbnl_filter
 

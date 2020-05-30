@@ -260,7 +260,7 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
         # filter_time has priority over filter_length
         filter_length_e = None
     window = window_var = max(int(np.round(filter_time * resolution)), 1)
-    cap_data = True
+    pad_data = True
 
     fbnl_filters = [[],[]]
     for c, cycle in enumerate(['stress', 'release']):  # 0=stress, 1=release
@@ -272,7 +272,7 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
             d = data[c][:, t]
             fbnl_filter = filter_fbnl(d, resolution, window=window,
                                       window_var=window_var, p=edginess,
-                                      cap_data=cap_data)
+                                      pad_data=pad_data)
             data[c][:, t] = fbnl_filter.data_filtered
             fbnl_filters[c].append(fbnl_filter)
 

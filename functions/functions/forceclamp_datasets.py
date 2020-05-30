@@ -150,7 +150,7 @@ def find_steps(forceclamp_data, steps_trace='extension',
                                        filter_number, edginess,
                                        expected_min_step_size,
                                        expected_min_dwell_t,
-                                       step_size_threshold, cap_data=True,
+                                       step_size_threshold, pad_data=True,
                                        verbose=False, plot=False)
     return step_finder_result
 
