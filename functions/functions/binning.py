@@ -67,9 +67,9 @@ def calculate_bin_means(data, bins=None, resolution=None, sortcolumn=0):
             Square root (of data size) estimator, used by Excel and other
             programs for its speed and simplicity.
     resolution: float
-        Resolution in values of `sortcolumn`. Used to calculate the number of
-        bins needed for the specified resolution. Only evaluated if `edges` and
-        `bins` is None.
+        Number of bins per unit of `sortcolumn`. Used to calculate the number
+        of bins needed for the specified resolution. Only evaluated if `edges`
+        and `bins` is None.
 
     Returns
     -------
