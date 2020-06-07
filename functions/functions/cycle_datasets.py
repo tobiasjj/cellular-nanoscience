@@ -200,17 +200,17 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
             d['angles_extension_after'] = result[result_data_idx][c][:,idx:idx+2]; idx += 2
             d['angles_force_after'] = result[result_data_idx][c][:,idx:idx+2]; idx += 2
 
-    e, f, fXYZ, nuz = uzsi.get_force_extension_nuz(simulation)
     data['simulation'] = {}
     d = data['simulation']
     d['key'] = sim_key
-    d['extension'] = e
-    d['force'] = f
-    d['forceXYZ'] = fXYZ
-    d['nuz'] = nuz
+
+    sim_values = uzsi.get_simulation_values(simulation)
+    d['extension'] = sim_values['extension']
+    d['force'] = sim_values['force']
+    d['forceXYZ'] = sim_values['fXYZ']
+    d['nuz'] = sim_values['nuz']
     d['settings'] = simulation['settings']
-    d['displacement'] = np.array([xfe0['D0_avg'] for xfe0
-                                  in simulation['XFE0']])
+    d['displacement'] = sim_values['displacement']
 
     return data
 

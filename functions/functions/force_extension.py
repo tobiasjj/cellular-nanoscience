@@ -726,8 +726,11 @@ def plot_unzip_data(tether, I, ax=None, fbnl=False, shift_x=0e-9, t_delta=15,
     ###############################
     ### Get and plot simulated data
     if simulation is not None:
-        e_sim, f_sim, fXYZ, nuz = uzsi.get_force_extension_nuz(simulation,
-                                                               theta=False)
+        sim_values = uzsi.get_simulation_values(simulation)
+        e_sim = sim_values['extension']
+        f_sim = sim_values['force']
+        fXYZ = sim_values['fXYZ']
+        nuz = sim_values['nuz']
         # Apparent extension and average force acting on the microsphere
         ax.plot(e_sim[f_sim<=25e-12]*1e9, f_sim[f_sim<=25e-12]*1e12,
                 color='#000000', ls=(0, (2.5, 2.5)), label='Simulation')
