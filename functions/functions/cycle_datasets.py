@@ -210,7 +210,7 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     d['forceXYZ'] = sim_values['fXYZ']
     d['nuz'] = sim_values['nuz']
     d['settings'] = simulation['settings']
-    d['displacement'] = sim_values['displacement']
+    d['displacement'] = sim_values['dXYZ']
 
     return data
 
