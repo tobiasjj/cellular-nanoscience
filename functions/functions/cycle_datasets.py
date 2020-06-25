@@ -53,6 +53,7 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                     simulations_dir=None, individual_posZ=True, fbnl=True,
                     angles=True, extra_traces=None,
                     angles_after_processing=True, phi_shift_twopi=True,
+                    weighted_energies=False,
                     **kwargs):
     """
     Load data of all cycles for a dataset
@@ -106,6 +107,7 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                              extra_traces=extra_traces,
                              angles_after_processing=angles_after_processing,
                              phi_shift_twopi=phi_shift_twopi,
+                             weighted_energies=weighted_energies,
                              **kwargs)
     try:
         _cycles_data = [_cycle_data(i) for i in I]
@@ -121,6 +123,7 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                     simulations_dir=None, individual_posZ=True, fbnl=True,
                     angles=True, extra_traces=None,
                     angles_after_processing=True, phi_shift_twopi=True,
+                    weighted_energies=False,
                     **kwargs):
     # Short notation for tether
     t = tether
@@ -203,7 +206,7 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                                 simulations_dir=simulations_dir)
     sim_key = uzsi.get_key(**simulation['settings'])
     sim_values = uzsi.get_simulation_values(simulation, fe_xyz=True,
-                                            weighted_energies=True)
+                                           weighted_energies=weighted_energies)
 
     data['simulation'] = { 'key': sim_key }
     data['simulation'].update(sim_values)
