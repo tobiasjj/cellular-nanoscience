@@ -210,6 +210,7 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
 
     data['simulation'] = { 'key': sim_key }
     data['simulation'].update(sim_values)
+    data['simulation']['settings'] = simulation['settings']
 
     return data
 
