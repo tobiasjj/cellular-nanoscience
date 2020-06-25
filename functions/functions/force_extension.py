@@ -208,7 +208,7 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
     Returns
     -------
     filtered_data, fbnl_filters
-    filtered_data is a list of two np.ndarrays (0: stress, 1: release)
+        filtered_data is a list of two np.ndarrays (0: stress, 1: release)
         each array has the filtered data with the columns 0: time, 1: extension
         2: force, and extra traces/angles
         fbnl_filters is a list of two lists (0: stress, 1: release) containing
