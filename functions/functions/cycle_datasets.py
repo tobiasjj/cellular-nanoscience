@@ -152,8 +152,13 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                                  **process_kwargs)
     result_data = result[result_data_idx]
 
-    # Select corresponding bin_means and assign to easy to remember variable names
+    # Select corresponding bin_means and assign to easy to remember variable
+    # names
     data = {}
+    # Get excited axis
+    axis = {'x': 0, 'y': 1}
+    ax = t.stress_release_pairs(i=i, info=True)[2][0,0]
+    excited_axis = axis[ax]
     data['excited_axis'] = excited_axis
     for c, cycle_name in zip([0, 1], ['stress', 'release']):
         data[cycle_name] = {}
@@ -189,10 +194,6 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
         posZ = None
     else:
         posZ = np.median(t.get_data('positionZ', samples=None))
-    # Get excited axis
-    axis = {'x': 0, 'y': 1}
-    ax = t.stress_release_pairs(i=i, info=True)[2][0,0]
-    excited_axis = axis[ax]
     print('Get simulation for cycle i = {} ...\r'.format(i), end='',
           flush=True)
     simulation = get_simulation(t, i, simulation_settings_file, posZ=posZ,
