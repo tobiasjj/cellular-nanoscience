@@ -1,9 +1,12 @@
 import itertools
 import numpy as np
 import os
+import operator as op
 import pyoti
 import unzipping_simulation as uzsi
+import warnings
 
+from collections.abc import Iterable
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from scipy.integrate import simps, cumtrapz
@@ -87,7 +90,11 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
         dataset['number_of_pairs'] = number_of_pairs
 
     # Get pair data and simulation for all cycles
-    I = range(number_of_pairs) if i is None else [i]
+    if i is None:
+        i = range(number_of_pairs)
+    if not isinstance(i, Iterable):
+        i = [i]
+    I = i
 
     # Define closure for getting ith cycle
     def _cycle_data(i):
@@ -118,30 +125,59 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     # Short notation for tether
     t = tether
 
-    # Get force/extension stress/release force extension data and angles and
-    # filter with FBNL or bin the data considerung the correction factor for
-    # kappa_z
+    # Get force/extension stress/release force extension data and angles, and
+    # fbnl_filter or bin the data considerung the correction factor for kappa_z
     kappa_z_factor = dataset['kappa_z_factor']
     fXYZ_factors = np.array([1, 1, kappa_z_factor])
     if fbnl:
         processing_function = fbnl_force_extension
-        process_kwargs = dict(
-                filter_length_e=5e-9,  # m
-                edginess=1,  # int
-                angles_after_filter=angles_after_processing)
-        result_data_idx = 0  #data_filtered, fbnl_filters = result  # 0: stress, 1: release
+        process_kwargs = {
+            'filter_length_e': 5e-9,  # m
+            'edginess': 1,  # int
+            'angles_after_filter': angles_after_processing }
+        # data_filtered, fbnl_filters = result
+        result_data_idx = 0
     else:
         processing_function = binned_force_extension
-        process_kwargs = dict(
-            bin_width_e=5e-9,  # m
-            sortcolumn=0,  # 0: time, 1: extension
-            angles_after_binning=angles_after_processing)
-        result_data_idx = 3  #bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns = result
+        process_kwargs = {
+            'bin_width_e': 5e-9,  # m
+            'sortcolumn': 0,  # 0: time, 1: extension
+            'angles_after_binning': angles_after_processing }
+        # bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns = result
+        result_data_idx = 3
     process_kwargs.update(kwargs)
     result = processing_function(t, i, fXYZ_factors=fXYZ_factors,
                                  angles=angles, extra_traces=extra_traces,
                                  phi_shift_twopi=phi_shift_twopi,
                                  **process_kwargs)
+    result_data = result[result_data_idx]
+
+    # Select corresponding bin_means and assign to easy to remember variable names
+    data = {}
+    data['excited_axis'] = excited_axis
+    for c, cycle_name in zip([0, 1], ['stress', 'release']):
+        data[cycle_name] = {}
+        d = data[cycle_name]
+
+        idx = 0
+        d['time'] = result_data[c][:,idx]; idx += 1
+        d['extension'] = result_data[c][:,idx]; idx += 1
+        d['force'] = result_data[c][:,idx]; idx += 1
+        if angles:
+            d['angles_extension'] = result_data[c][:,idx:idx+2]; idx += 2
+            d['angles_force'] = result_data[c][:,idx:idx+2]; idx += 2
+            d['distanceXYZ'] = result_data[c][:,idx:idx+3]; idx += 3
+            d['forceXYZ'] = result_data[c][:,idx:idx+3]; idx += 3
+        if extra_traces is not None:
+            columns = 3  # time, extension, force
+            if angles: columns += 10
+            if angles and angles_after_processing: columns += 4
+            columns_total = result_data[c].shape[1]
+            columns_extra = columns_total - columns
+            d['extra'] = result_data[c][:,idx:idx+columns_extra]; idx += columns_extra
+        if angles and angles_after_processing:
+            d['angles_extension_after'] = result_data[c][:,idx:idx+2]; idx += 2
+            d['angles_force_after'] = result_data[c][:,idx:idx+2]; idx += 2
 
     # Get/do the simulation considering the correction factor for kappa_z
     simulation_settings_file = SIMULATION_SETTINGS_FILE \
@@ -165,64 +201,23 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                                 excited_axis=excited_axis,
                                 simulations_dir=simulations_dir)
     sim_key = uzsi.get_key(**simulation['settings'])
+    sim_values = uzsi.get_simulation_values(simulation, fe_xyz=True,
+                                            weighted_energies=True)
 
-    # Calculate force XYZ
-    # import importlib
-    # forceXYZ = importlib.import_module(tether.__module__).forceXYZ(
-    #     tether.calibration, psdXYZ, positionZ, fXYZ_factors=fXYZ_factors) # N
-    # forceXYZ = pyoti.evaluate.tether.forceXYZ(tether.calibration, psdXYZ,
-    #                                positionZ, fXYZ_factors=fXYZ_factors)  # N
-
-    # Select corresponding bin_means and assign to easy to remember variable names
-    data = {}
-    data['excited_axis'] = excited_axis
-    for c, cycle_name in zip([0, 1], ['stress', 'release']):  # stress: 0, release: 1
-        data[cycle_name] = {}
-        d = data[cycle_name]
-
-        idx = 0
-        d['time'] = result[result_data_idx][c][:,idx]; idx += 1
-        d['extension'] = result[result_data_idx][c][:,idx]; idx += 1
-        d['force'] = result[result_data_idx][c][:,idx]; idx += 1
-        if angles:
-            d['angles_extension'] = result[result_data_idx][c][:,idx:idx+2]; idx += 2
-            d['angles_force'] = result[result_data_idx][c][:,idx:idx+2]; idx += 2
-            d['distanceXYZ'] = result[result_data_idx][c][:,idx:idx+3]; idx += 3
-            d['forceXYZ'] = result[result_data_idx][c][:,idx:idx+3]; idx += 3
-        if extra_traces is not None:
-            columns = 3  # time, extension, force
-            if angles: columns += 10
-            if angles and angles_after_processing: columns += 4
-            columns_total = result[result_data_idx][c].shape[1]
-            columns_extra = columns_total - columns
-            d['extra'] = result[result_data_idx][c][:,idx:idx+columns_extra]; idx += columns_extra
-        if angles and angles_after_processing:
-            d['angles_extension_after'] = result[result_data_idx][c][:,idx:idx+2]; idx += 2
-            d['angles_force_after'] = result[result_data_idx][c][:,idx:idx+2]; idx += 2
-
-    data['simulation'] = {}
-    d = data['simulation']
-    d['key'] = sim_key
-
-    sim_values = uzsi.get_simulation_values(simulation)
-    d['extension'] = sim_values['extension']
-    d['force'] = sim_values['force']
-    d['forceXYZ'] = sim_values['fXYZ']
-    d['nuz'] = sim_values['nuz']
-    d['settings'] = simulation['settings']
-    d['displacement'] = sim_values['dXYZ']
+    data['simulation'] = { 'key': sim_key }
+    data['simulation'].update(sim_values)
 
     return data
 
 
-def add_idcs(cycle_data, cycle=None, **kwargs):
-    if cycle is None:
-        cycles = ['stress', 'release', 'simulation']
-    else:
-        cycles = [cycle]
-    for cycle in cycles:
-        cycle_data[cycle]['idcs'] = get_idcs(cycle_data, cycle=cycle, **kwargs)
-    return cycle_data
+#def add_idcs(cycle_data, cycle=None, **kwargs):
+#    if cycle is None:
+#        cycles = ['stress', 'release', 'simulation']
+#    else:
+#        cycles = [cycle]
+#    for cycle in cycles:
+#        cycle_data[cycle]['idcs'] = get_idcs(cycle_data, cycle=cycle, **kwargs)
+#    return cycle_data
 
 
 def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
@@ -253,8 +248,8 @@ def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
         'crop': idx_crop,
         'xsort': idx_sort,
         'xsort_crop': idx_sort_crop,
-        'x': idx_x,
-        'f': idx_f,
+        'valid_x': idx_x,
+        'valid_f': idx_f,
         'settings': {
             'cycle': cycle,
             'min_x': min_x,
@@ -268,37 +263,73 @@ def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
     return return_value
 
 
-def add_area(cycle_data, cycle=None):
-    if cycle is None:
-        cycles = ['stress', 'release', 'simulation']
-    else:
-        cycles = [cycle]
+def add_areas(cycle_data):
+    """
+    Parameters
+    ----------
+    cycle : str
+        'stress', 'release', or 'simulation'. Defaults to ['stress, 'release',
+        'simulation'].
+    """
+    cycles = ['stress', 'release', 'simulation']
     for cycle in cycles:
         cycle_data[cycle]['area'] = get_area(cycle_data, cycle=cycle,
+                                             x_key='extension',
                                              integration_type='trapz')
         cycle_data[cycle]['cumarea'] = get_area(cycle_data, cycle=cycle,
+                                                x_key='extension',
                                                 integration_type='cumtrapz')
+        try:
+            cycle_data[cycle]['rectarea'] = get_area(cycle_data, cycle=cycle,
+                                                     x_key='ext_centers',
+                                                     integration_type='rect')
+        except KeyError as e:
+            msg = "x_key {} does not exist in `cycle_data`".format(e)
+            warnings.warn(msg)
     return cycle_data
 
 
-def get_area(cycle_data, cycle='stress', integration_type=None):
+def get_area(cycle_data, cycle='stress', x_key=None, idx=None,
+             integration_type=None, resolution=None):
+    """
+    Parameters
+    ----------
+    x_key : str
+        Key to choose the values for x axis. Defaults to 'extension'.
+    idx : indices
+        Indices to use for area calculation.
+    resolution : float
+        Resolution is only used to calculate 'rectarea' and if `cycle_data`
+        does not provide a resolution. Defaults to 1.
+    """
+    idx = slice(None) if idx is None else idx
+    x_key = 'extension' if x_key is None else x_key
+    x = cycle_data[cycle][x_key][idx]
+    y = cycle_data[cycle]['force'][idx]
+
+    if 'resolution' in cycle_data[cycle]:
+        resolution = cycle_data[cycle]['resolution']
+    else:
+        resolution = 1 if resolution is None else resolution
     integration_fs = {
         'simps': simps,
         'trapz': np.trapz,
-        'cumtrapz': cumtrapz
+        'cumtrapz': cumtrapz,
+        'rect': lambda y, x: y / resolution
     }
+    initial = 0
     integration_kwargs = {
-        'cumtrapz': { 'initial': 0 }
+        'cumtrapz': { 'initial': initial }
     }
     f = integration_fs.get(integration_type, np.trapz)
     if integration_type not in integration_fs:
         integration_type = 'trapz'
     f_kwargs = integration_kwargs.get(integration_type, {})
 
-    idx = cycle_data[cycle]['idcs']['xsort_crop']
-    x = cycle_data[cycle]['extension'][idx]
-    y = cycle_data[cycle]['force'][idx]
-    area = f(y, x, **f_kwargs)
+    if f_kwargs:
+        area = f(y, x, **f_kwargs)
+    else:
+        area = f(y, x)
 
     return_value = {
         'value': area,
@@ -519,16 +550,25 @@ def plot_cycle_data(cycle_data, release=False, bps_A=None, bps_B=None,
                     shift_x=None, print_shift_x=True, xlim=None, ylim=None):
     # Plot measured and simulated force extension in 3D and angles of force and
     # extension
-    shift_x = 0 if shift_x is None else shift_x
+    shift_x_stress = 0
+    shift_x_release = 0
+    if 'shift_x' in cycle_data['stress']:
+        shift_x_stress = cycle_data['stress']['shift_x']
+    if release and 'shift_x' in cycle_data['release']:
+        shift_x_release = cycle_data['release']['shift_x']
+    # shift_x parameter takes precedence over other shift_x settings
+    if shift_x is not None:
+        shift_x_stress = shift_x
+        shift_x_release = shift_x
 
     # Get the unzipping data
     data = cycle_data
     excited_axis = data['excited_axis']
-    x = data['stress']['extension'] + shift_x
+    x = data['stress']['extension'] + shift_x_stress
     f = data['stress']['force']
     fXYZ = np.abs(data['stress']['forceXYZ'])
     if release:
-        x_release = data['release']['extension'] + shift_x
+        x_release = data['release']['extension'] + shift_x_release
         f_release = data['release']['force']
         fXYZ_release = np.abs(data['release']['forceXYZ'])
     else:
@@ -560,12 +600,13 @@ def plot_cycle_data(cycle_data, release=False, bps_A=None, bps_B=None,
 
     if print_shift_x:
         ax = axes[0]
+        shift_x = shift_x_stress
         ax.text(0.98, 0.03, r'{:.0f}$\,$nm'.format(shift_x*1e9), fontsize=7,
                 horizontalalignment='right', verticalalignment='bottom',
                 transform=ax.transAxes)
 
     # Link y-axes of force plots together
-    ax.get_shared_y_axes().join(axes[0], axes[1])
+    axes[0].get_shared_y_axes().join(axes[0], axes[1])
     for ax in axes[:-1]:
         # link x-axes together
         ax.get_shared_x_axes().join(ax, axes[-1])
