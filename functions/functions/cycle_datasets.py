@@ -197,8 +197,8 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
         posZ = None
     else:
         posZ = np.median(t.get_data('positionZ', samples=None))
-    print('Get simulation for cycle i = {} ...\r'.format(i), end='',
-          flush=True)
+    msg = 'Get simulation for cycle i = {} ...\r'.format(i)
+    print(msg, end='', flush=True)
     simulation = get_simulation(t, i, simulation_settings_file, posZ=posZ,
                                 individual_posZ=individual_posZ,
                                 kappa_z_factor=kappa_z_factor,
@@ -207,6 +207,39 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     sim_key = uzsi.get_key(**simulation['settings'])
     sim_values = uzsi.get_simulation_values(simulation, fe_xyz=True,
                                            weighted_energies=weighted_energies)
+
+    # Calculate normalized energy gains:
+    # Calculate energy and extension gains for every point of the simulation
+    # and normalize energy by extension gains. As the points of energy gain lay
+    # between the simulated extension points, interpolate energy gains by
+    # weighting each energy gain difference with its corresponding extensions.
+    if weighted_energies:
+        e_keys = [
+            'e_ext_ssDNA',
+            'e_ext_dsDNA',
+            'e_unzip_DNA',
+            #'e_lev'  # does not depend on extension but rather on distance
+        ]
+        ex_diff = np.diff(sim_values['extension'])
+        for ek in e_keys:
+            # Calculate energy gain from one point of extension to the next
+            e_diff = np.diff(sim_values[ek])
+            # Normalize energy gain by extension gain
+            e_per_m = e_diff / ex_diff
+            # Calculate difference between energy gains
+            e_per_m_diff = np.diff(e_per_m)
+            # Calculate weight for interpolation between steps
+            weight = ex_diff[:-1] / (ex_diff[:-1] + ex_diff[1:])
+            weight = 0
+            # Calculate interpolated energy gain difference between the points
+            e_per_m_diff_intp = e_per_m_diff * weight
+            # Calculate interpolated energy gain
+            e_per_m_intp = e_per_m[:-1] + e_per_m_diff_intp
+            # Pad unknown ends of energy gain
+            e_per_m_intp = np.r_[e_per_m_intp[0],
+                                 e_per_m_intp,
+                                 e_per_m_intp[-1]]
+            sim_values['{}_per_m'.format(ek)] = e_per_m_intp
 
     data['simulation'] = { 'key': sim_key }
     data['simulation'].update(sim_values)
