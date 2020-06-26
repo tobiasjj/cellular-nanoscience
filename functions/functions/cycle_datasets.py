@@ -230,7 +230,6 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
             e_per_m_diff = np.diff(e_per_m)
             # Calculate weight for interpolation between steps
             weight = ex_diff[:-1] / (ex_diff[:-1] + ex_diff[1:])
-            weight = 0
             # Calculate interpolated energy gain difference between the points
             e_per_m_diff_intp = e_per_m_diff * weight
             # Calculate interpolated energy gain
