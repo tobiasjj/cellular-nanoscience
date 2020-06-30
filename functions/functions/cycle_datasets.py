@@ -53,7 +53,7 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                     simulations_dir=None, individual_posZ=True, fbnl=True,
                     angles=True, extra_traces=None,
                     angles_after_processing=True, phi_shift_twopi=True,
-                    weighted_energies=False,
+                    weighted_energies=False, energy_keys=None,
                     **kwargs):
     """
     Load data of all cycles for a dataset
@@ -108,6 +108,7 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                              angles_after_processing=angles_after_processing,
                              phi_shift_twopi=phi_shift_twopi,
                              weighted_energies=weighted_energies,
+                             energy_keys=energy_keys,
                              **kwargs)
     try:
         _cycles_data = [_cycle_data(i) for i in I]
@@ -123,7 +124,7 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                     simulations_dir=None, individual_posZ=True, fbnl=True,
                     angles=True, extra_traces=None,
                     angles_after_processing=True, phi_shift_twopi=True,
-                    weighted_energies=False,
+                    weighted_energies=False, energy_keys=None,
                     **kwargs):
     # Short notation for tether
     t = tether
@@ -205,8 +206,16 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                                 excited_axis=excited_axis,
                                 simulations_dir=simulations_dir)
     sim_key = uzsi.get_key(**simulation['settings'])
+    #e_keys = [
+    #    'e_ext_ssDNA',
+    #    'e_ext_dsDNA',
+    #    'e_unzip_DNA',
+    #    #'e_lev'  # does not depend on extension but rather on distance
+    #]
+    #energy_keys = e_keys if energy_keys is None else energy_keys
     sim_values = uzsi.get_simulation_values(simulation, fe_xyz=True,
-                                           weighted_energies=weighted_energies)
+                                            weighted_energies=weighted_energies,
+                                            energy_keys=energy_keys)
 
     # Calculate normalized energy gains:
     # Calculate energy and extension gains for every point of the simulation
@@ -214,13 +223,9 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     # between the simulated extension points, interpolate energy gains by
     # weighting each energy gain difference with its corresponding extensions.
     if weighted_energies:
-        e_keys = [
-            'e_ext_ssDNA',
-            'e_ext_dsDNA',
-            'e_unzip_DNA',
-            #'e_lev'  # does not depend on extension but rather on distance
-        ]
         ex_diff = np.diff(sim_values['extension'])
+        sim_keys = sim_values.keys()
+        e_keys = [sim_key for sim_key in sim_keys if sim_key.startswith('e_')]
         for ek in e_keys:
             # Calculate energy gain from one point of extension to the next
             e_diff = np.diff(sim_values[ek])
