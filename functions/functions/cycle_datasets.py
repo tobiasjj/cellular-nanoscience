@@ -3,6 +3,7 @@ import numpy as np
 import os
 import operator as op
 import pyoti
+import pickle
 import unzipping_simulation as uzsi
 import warnings
 
@@ -17,16 +18,18 @@ from .force_extension import binned_force_extension, fbnl_force_extension, \
 from .helpers import suppress_stdout
 
 DATA_BASEDIR = './data'
-SIMULATION_SETTINGS_FILE = './standard_simulation_settings.p'
-SIMULATIONS_DIR = './simulations'
 RESULTS_REGION_NAME = 'results'
 RESOLUTION_SF = 1000
+SIMULATION_SETTINGS_FILE = './simulation_settings.p'
+SIMULATIONS_DIR = './simulations'
+CYCLES_DATAS_DIR = './cycles_datas'
 
 
 def create_dataset(directory, dbname, kappa_z_factor, shift_x, c_rad52=0,
                    c_count=0, number_of_pairs=0, key=None, datadir='data'):
     directory = os.path.join(directory, datadir)
     dataset = {
+        'key': key,
         'directory': directory,
         'dbname': dbname,
         'kappa_z_factor': kappa_z_factor,
@@ -34,7 +37,6 @@ def create_dataset(directory, dbname, kappa_z_factor, shift_x, c_rad52=0,
         'c_rad52': c_rad52,
         'c_count': c_count,
         'number_of_pairs': number_of_pairs,
-        'key': key,
     }
     return dataset
 
@@ -47,6 +49,35 @@ def get_dbfile_path(dataset, basedir=None):
     return fullpath
 
 
+def get_cycles_data_filepath(dataset, cycles_datas_dir=None, makedirs=False):
+    cycles_datas_dir = CYCLES_DATAS_DIR if cycles_datas_dir is None \
+                       else cycles_datas_dir
+    filename = '{}.p'.format(dataset['key'])
+    filepath = os.path.join(cycles_datas_dir, filename)
+    if makedirs:
+        os.makedirs(cycles_datas_dir, exist_ok=True)
+    return filepath
+
+
+def load_cycles_data(dataset, cycles_datas_dir=None):
+    filepath = get_cycles_data_filepath(dataset,
+                                        cycles_datas_dir=cycles_datas_dir)
+    try:
+        with open(filepath, 'rb') as f:
+            cycles_datas = pickle.load(f)
+    except FileNotFoundError:
+        cycles_datas = None
+    return cycles_datas
+
+
+def save_cycles_data(cycles_data, cycles_datas_dir=None):
+    filepath = get_cycles_data_filepath(cycles_data,
+                                        cycles_datas_dir=cycles_datas_dir,
+                                        makedirs=True)
+    with open(filepath, 'wb') as f:
+        pickle.dump(cycles_data, f)
+
+
 def get_cycles_data(dataset, i=None, results_region_name=None,
                     deactivate_baseline_mod=False, baseline_decimate=1,
                     resolution_sf=None, simulation_settings_file=None,
@@ -54,10 +85,13 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                     angles=True, extra_traces=None,
                     angles_after_processing=True, phi_shift_twopi=True,
                     weighted_energies=False, energy_keys=None,
-                    **kwargs):
+                    cycles_datas_dir=None, load=False, save=False, **kwargs):
     """
     Load data of all cycles for a dataset
     """
+    if load:
+        return load_cycles_data(dataset, cycles_datas_dir=cycles_datas_dir)
+
     # Get stress/release data
     results_region_name = RESULTS_REGION_NAME if results_region_name is None \
                           else results_region_name
@@ -111,11 +145,35 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                              energy_keys=energy_keys,
                              **kwargs)
     try:
+        cycles_data = {
+            'key': dataset['key'],
+            'settings': {
+                'dataset': dataset,
+                'results_region_name': results_region_name,
+                'deactivate_baseline_mod': deactivate_baseline_mod,
+                'baseline_decimate': baseline_decimate,
+                'resolution_sf': resolution_sf,
+                'simulation_settings_file': simulation_settings_file,
+                'simulations_dir': simulations_dir,
+                'individual_posZ': individual_posZ,
+                'fbnl': fbnl,
+                'angles': angles,
+                'extra_traces': extra_traces,
+                'angles_after_processing': angles_after_processing,
+                'phi_shift_twopi': phi_shift_twopi,
+                'weighted_energies': weighted_energies,
+                'energy_keys': energy_keys
+            }
+        }
         _cycles_data = [_cycle_data(i) for i in I]
-        cycles_data = dict(zip(I, _cycles_data))
+        cycles_data.update(dict(zip(I, _cycles_data)))
     finally:
         # Abort changes and close experiment
         exp.close(abort=True)
+
+    if save:
+        save_cycles_data(dataset, cycles_data,
+                         cycles_datas_dir=cycles_datas_dir)
 
     return cycles_data
 
