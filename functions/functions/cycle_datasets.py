@@ -336,7 +336,10 @@ def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
     idx_f = step_idx(fs, threshold_f, include_bounds=include_bounds)
     idx_crop = np.logical_and(idx_x, idx_f)
 
-    first_x = xs[idx_crop][0]
+    try:
+        first_x = xs[idx_crop][0]
+    except IndexError:
+        first_x = 0
     idx_length_x = compare_idx(xs - first_x, max_length_x, comparison='less')
     idx_crop = np.logical_and(idx_crop, idx_length_x)
 
@@ -426,10 +429,20 @@ def get_area(cycle_data, cycle='stress', x_key=None, idx=None,
         integration_type = 'trapz'
     f_kwargs = integration_kwargs.get(integration_type, {})
 
-    if f_kwargs:
-        area = f(y, x, **f_kwargs)
-    else:
-        area = f(y, x)
+    try:
+        if f_kwargs:
+            area = f(y, x, **f_kwargs)
+        else:
+            area = f(y, x)
+    except (IndexError, ValueError):
+        integration_default = {
+            'simps': 0.0,
+            'trapz': 0.0,
+            'cumptrapz': np.array([]),
+            'rect': np.array([])
+        }
+        area = integration_default.get(integration_type, 0.0)
+
 
     return_value = {
         'value': area,
@@ -628,7 +641,7 @@ def plot_unspec_bounds(cycle_data, bps_A=None, bps_B=None, axes=None):
         B = np.array(B)
         C = A + B + 2 * E_ssDNA + radius
         # height H, i.e. distance between glass-surface - bead-surface
-        H = h0 - cycle_data['simulation']['displacement'][:,1].astype(float)
+        H = h0 - cycle_data['simulation']['displacementXYZ'][:,1].astype(float)
         # distance D, i.e. distance of glass-surface - bead-center
         D = H + radius
         # height H_fork, i.e. distance of glass-surface - unzipping fork
