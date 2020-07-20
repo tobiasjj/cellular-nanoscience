@@ -1,9 +1,9 @@
 import itertools
 import numpy as np
 import os
-import operator as op
 import pyoti
 import pickle
+import scipy.signal
 import unzipping_simulation as uzsi
 import warnings
 
@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from scipy.integrate import simps, cumtrapz
 
+from .binning import calculate_bin_means
 from .helpers import compare_idx, min_max_idx, step_idx
 from .force_extension import binned_force_extension, fbnl_force_extension, \
                              get_simulation
@@ -23,7 +24,7 @@ RESOLUTION_SF = 1000
 SIMULATION_SETTINGS_FILE = './simulation_settings.p'
 SIMULATIONS_DIR = './simulations'
 CYCLES_DATAS_DIR = './cycles_datas'
-
+CYCLES_MEANS_DIR = './cycles_means'
 
 def create_dataset(directory, dbname, kappa_z_factor, shift_x, c_rad52=0,
                    c_count=0, number_of_pairs=0, key=None, datadir='data'):
@@ -58,6 +59,11 @@ def get_cycles_data_filepath(dataset, cycles_datas_dir=None, makedirs=False):
         os.makedirs(cycles_datas_dir, exist_ok=True)
     return filepath
 
+def get_cycles_mean_filepath(dataset, cycles_means_dir=None, makedirs=False):
+    cycles_means_dir = CYCLES_MEANS_DIR if cycles_means_dir is None \
+                       else cycles_means_dir
+    return get_cycles_data_filepath(dataset, cycles_datas_dir=cycles_means_dir,
+                                    makedirs=makedirs)
 
 def load_cycles_data(dataset, cycles_datas_dir=None):
     filepath = get_cycles_data_filepath(dataset,
@@ -69,6 +75,10 @@ def load_cycles_data(dataset, cycles_datas_dir=None):
         cycles_datas = None
     return cycles_datas
 
+def load_cycles_mean(dataset, cycles_means_dir=None):
+    cycles_means_dir = CYCLES_MEANS_DIR if cycles_means_dir is None \
+                       else cycles_means_dir
+    return load_cycles_data(dataset, cycles_datas_dir=cycles_means_dir)
 
 def save_cycles_data(cycles_data, cycles_datas_dir=None):
     filepath = get_cycles_data_filepath(cycles_data,
@@ -77,6 +87,12 @@ def save_cycles_data(cycles_data, cycles_datas_dir=None):
     with open(filepath, 'wb') as f:
         pickle.dump(cycles_data, f)
 
+def save_cycles_mean(cycles_mean, cycles_means_dir=None):
+    filepath = get_cycles_mean_filepath(cycles_mean,
+                                        cycles_means_dir=cycles_means_dir,
+                                        makedirs=True)
+    with open(filepath, 'wb') as f:
+        pickle.dump(cycles_mean, f)
 
 def get_cycles_data(dataset, i=None, results_region_name=None,
                     deactivate_baseline_mod=False, baseline_decimate=1,
@@ -364,6 +380,350 @@ def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
     }
 
     return return_value
+
+
+# define functions for shift_x determination and mean calculation
+def correlate_template(data, template, mode='valid', demean=True,
+                       normalize='full', method='auto'):
+    """
+    Reference:
+    https://anomaly.io/understand-auto-cross-correlation-normalized-shift/index.html
+    https://github.com/trichter/xcorr
+
+    Normalized cross-correlation of two signals with specified mode.
+    If you are interested only in a part of the cross-correlation function
+    around zero shift use :func:`correlate_maxlag` which allows to
+    explicetly specify the maximum lag.
+    :param data,template: signals to correlate. Template array must be shorter
+        than data array.
+    :param normalize:
+        One of ``'naive'``, ``'full'`` or ``None``.
+        ``'full'`` normalizes every correlation properly,
+        whereas ``'naive'`` normalizes by the overall standard deviations.
+        ``None`` does not normalize.
+    :param mode: correlation mode to use.
+        See :func:`scipy.signal.correlate`.
+    :param bool demean: Demean data beforehand.
+        For ``normalize='full'`` data is demeaned in different windows
+        for each correlation value.
+    :param method: correlation method to use.
+        See :func:`scipy.signal.correlate`.
+    :return: cross-correlation function.
+    .. note::
+        Calling the function with ``demean=True, normalize='full'`` (default)
+        returns the zero-normalized cross-correlation function.
+        Calling the function with ``demean=False, normalize='full'``
+        returns the normalized cross-correlation function.
+    """
+    data = np.asarray(data)
+    template = np.asarray(template)
+    lent = len(template)
+    if len(data) < lent:
+        raise ValueError('Data must not be shorter than template.')
+    if demean:
+        template = template - np.mean(template)
+        if normalize != 'full':
+            data = data - np.mean(data)
+    cc = scipy.signal.correlate(data, template, mode, method)
+    if normalize is not None:
+        tnorm = np.sum(template ** 2)
+        if normalize == 'naive':
+            norm = (tnorm * np.sum(data ** 2)) ** 0.5
+            if norm <= np.finfo(float).eps:
+                cc[:] = 0
+            elif cc.dtype == float:
+                cc /= norm
+            else:
+                cc = cc / norm
+        elif normalize == 'full':
+            pad = len(cc) - len(data) + lent
+            if mode == 'same':
+                pad1, pad2 = (pad + 2) // 2, (pad - 1) // 2
+            else:
+                pad1, pad2 = (pad + 1) // 2, pad // 2
+            data = _pad_zeros(data, pad1, pad2)
+            # in-place equivalent of
+            # if demean:
+            #     norm = ((_window_sum(data ** 2, lent) -
+            #              _window_sum(data, lent) ** 2 / lent) * tnorm) ** 0.5
+            # else:
+            #      norm = (_window_sum(data ** 2, lent) * tnorm) ** 0.5
+            # cc = cc / norm
+            if demean:
+                norm = _window_sum(data, lent) ** 2
+                if norm.dtype == float:
+                    norm /= lent
+                else:
+                    norm = norm / lent
+                np.subtract(_window_sum(data ** 2, lent), norm, out=norm)
+            else:
+                norm = _window_sum(data ** 2, lent)
+            norm *= tnorm
+            if norm.dtype == float:
+                np.sqrt(norm, out=norm)
+            else:
+                norm = np.sqrt(norm)
+            mask = norm <= np.finfo(float).eps
+            if cc.dtype == float:
+                cc[~mask] /= norm[~mask]
+            else:
+                cc = cc / norm
+            cc[mask] = 0
+        else:
+            msg = "normalize has to be one of (None, 'naive', 'full')"
+            raise ValueError(msg)
+    return cc
+def _pad_zeros(a, num, num2=None):
+    """Pad num zeros at both sides of array a"""
+    if num2 is None:
+        num2 = num
+    hstack = [np.zeros(num, dtype=a.dtype), a, np.zeros(num2, dtype=a.dtype)]
+    return np.hstack(hstack)
+def _window_sum(data, window_len):
+    """Rolling sum of data"""
+    window_sum = np.cumsum(data)
+    # in-place equivalent of
+    # window_sum = window_sum[window_len:] - window_sum[:-window_len]
+    # return window_sum
+    np.subtract(window_sum[window_len:], window_sum[:-window_len],
+                out=window_sum[:-window_len])
+    return window_sum[:-window_len]
+
+
+def _get_cycle_2d(cycle_data, cycle, x_key=None, y_key=None):
+    """
+    Get extension and force as a 2D array, with the extension
+    beeing in the first and the force in the second column.
+    """
+    x_key = 'extension' if x_key is None else x_key
+    y_key = 'force' if y_key is None else y_key
+    x = cycle_data[cycle][x_key]
+    y = cycle_data[cycle][y_key]
+    if cycle == 'simulation':
+        n = cycle_data[cycle]['nuz']
+        d = cycle_data[cycle]['displacementXYZ']
+        try:
+            e1 = cycle_data[cycle]['e_ext_ssDNA_per_m']
+            e2 = cycle_data[cycle]['e_ext_dsDNA_per_m']
+            e3 = cycle_data[cycle]['e_unzip_DNA_per_m']
+            #e4 = cycle_data[cycle]['e_lev']
+            return np.c_[x, y, n, d, e1, e2, e3]
+        except KeyError:
+            return np.c_[x, y, n, d]
+
+    return np.c_[x, y]
+
+
+def get_cycle_means_data(cycle_data, cycle, idx=None, shift_x=None,
+                         edges=None, resolution=None):
+    """
+    Parameters
+    ----------
+    resolution : float
+        The resolution in m⁻¹ of the binned data. The edges of the bins are
+        determined by using the extension of the `edges_cycle`. Defaults to
+        1/4e-9.
+    """
+    # Get extension, force, etc. as a 2d array
+    data2d = _get_cycle_2d(cycle_data, cycle)
+
+    # select subset of data according to `idx_key`
+    if idx is not None:
+        #idx = cycle_data[cycle]['idcs'][idx]
+        data2d = data2d[idx]
+
+    # Shift extension to align with optionally provided edges and revert
+    # after having binned the data
+    shift_x = 0 if shift_x is None else shift_x
+    data2d[:,0] += shift_x
+
+    # Calculate bin means
+    # cast values of simulation mpmath.mpf to float
+    # Determine edges for the first cycle and use these for all subsequent
+    # cycles
+    resolution = 1/4e-9 if resolution is None else resolution
+    edges, centers, width, bin_means = \
+        calculate_bin_means(data2d.astype(float), bins=edges,
+                            resolution=resolution)[:4]
+
+    # Select values that are valid
+    try:
+        valid_idx = np.logical_and(edges[:-1] >= data2d[:,0].min(),
+                                   edges[1:] <= data2d[:,0].max())
+    except ValueError:
+        valid_idx = np.array([], dtype=int)
+    data = {
+        'extension': bin_means[valid_idx,0] - shift_x,
+        'force': bin_means[valid_idx,1],
+        'ext_centers': centers[valid_idx] - shift_x,
+        'shift_x': shift_x,
+        'edges': edges - shift_x,
+        'resolution': resolution,
+        'sim_idx': np.where(valid_idx)[0]
+    }
+    if cycle == 'simulation':
+        data['nuz'] = bin_means[valid_idx,2]
+        data['displacement'] = bin_means[valid_idx,3:5]
+        try:
+            data['e_ext_ssDNA_per_m'] = bin_means[valid_idx,5]
+            data['e_ext_dsDNA_per_m'] = bin_means[valid_idx,6]
+            data['e_unzip_DNA_per_m'] = bin_means[valid_idx,7]
+            #data['e_lev'] = bin_means[valid_idx,8]
+        except KeyError:
+            pass
+    return data
+
+
+def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
+                           threshold_f=None, search_window_e=None, edges=None,
+                           resolution=None):
+    cycle_means = {}
+    # Determine shift_x to align 'simulation' with 'stress' and 'release' cycle
+    try:
+        align_x = _get_shift_x(cycle_data, min_x=min_x,
+                               max_length_x=max_length_x,
+                               threshold_f=threshold_f,
+                               search_window_e=search_window_e, plot=False)
+    except ValueError:
+        align_x = 0
+    shift_x = 0
+    for cycle in ['simulation', 'stress', 'release']:
+        cycle_means[cycle] = get_cycle_means_data(cycle_data, cycle,
+                                                  shift_x=shift_x, edges=edges,
+                                                  resolution=resolution)
+        # Align 'stress' and 'release' with simulation, i.e. set edges to the
+        # ones from 'simulation' and shift by 'shift_x'
+        edges = cycle_means[cycle]['edges']
+        shift_x = align_x
+
+    return cycle_means
+
+
+def _get_shift_x(cycle_data, min_x=None, max_length_x=None, threshold_f=None,
+                 resolution=None, search_window_e=None, peak_height=0.95,
+                 plot=False):
+    """
+    Determine the shift between the 'stress' and the 'simulation' cycle,
+    assuming the simulation having the true extension.
+
+    Parameters
+    ----------
+    cycle_data : dict
+    resolution : float
+        The resolution in m⁻¹ the cycle_data gets binned with before cross
+        correlation.
+    search_window_e : float or (float, float)
+        Extension in m the stress signal should be shifted up to the left and
+        right from the position where the force of the stress and simulation
+        are the same. The range is used to calculate the normalized
+        cross-correlation and find the position with the best correlation. If
+        search_window is None, the whole simulation is searched for the best
+        correlation.
+    min_x : float
+    max_length_x : float
+    threshold_f : float
+    """
+    # Get indices to crop 'stress' force extension curve, assuming the
+    # unzipping starts directly after having reached `threshold_f` and is
+    # `max_length_x` long. The region of the cropped 'stress' cycle needs to be
+    # fully included in the 'simulaton' cycle, otherwise the correlation of
+    # 'stress' and 'simulation' fails!
+    crop_idx = get_idcs(cycle_data, cycle='stress', min_x=min_x, max_x=None,
+                        threshold_f=threshold_f,
+                        max_length_x=max_length_x)['crop']
+
+    # Get binned force extension values of simulation and stress
+    # Bin the data acccording to the 'simulation' and take the calculated edges
+    # from the simulation also for the binning of 'stress'
+    # Use only the 'cropped' region of stress and release, as these should
+    # contain the unzipping region.
+    # No further sorting necessary, as bin means are already sorted along e
+    idx = None
+    edges = None
+    cycle_means = {}
+    for cycle in ['simulation', 'stress']:
+        data = get_cycle_means_data(cycle_data, cycle, idx=idx, edges=edges,
+                                    resolution=resolution)
+
+        cycle_means[cycle] = data
+
+        # Set crop and edges for 'stress' cycle
+        idx = crop_idx
+        edges = data['edges']
+
+    if len(cycle_means['stress']['ext_centers']) == 0:
+        msg1 = 'No datapoints of stress cycle where selected!'
+        msg2 = 'Provide proper `min_x`, `max_length_x`, and `threshold_f`!'
+        raise ValueError(msg1, msg2)
+    if len(cycle_means['stress']['ext_centers']) \
+           >= len(cycle_means['simulation']['ext_centers']):
+        msg1 = 'Length of simulation needs to be greater then cropped stress cycle!'
+        msg2 = 'Provdie proper `min_x`, `max_length_x`, and `threshold_f`'
+        msg3 = 'Or provide simulation with more datapoints!'
+        raise ValueError(msg1, msg2, msg3)
+
+    if search_window_e is not None:
+        # Find index of simulation, where force is same as first force of stress
+        start_stress_f = cycle_means['stress']['force'][0]
+        start_sim_idx = np.argmax(cycle_means['simulation']['force'] \
+                                  >= start_stress_f)
+        start_sim_e = cycle_means['simulation']['extension'][start_sim_idx]
+
+        # Get indices of simulation where extension is less than first and
+        # greater than length of stress according to search_window_e
+        try:
+            search_window_left_e = search_window_e[0]
+            search_window_right_e = search_window_e[1]
+        except:
+            search_window_left_e = search_window_e
+            search_window_right_e = search_window_e
+        min_sim_e = start_sim_e - search_window_left_e
+        max_sim_e = start_sim_e + search_window_right_e \
+                    + (cycle_means['stress']['extension'][-1] \
+                    - cycle_means['stress']['extension'][0])
+        min_sim_idx = cycle_means['simulation']['extension'] >= min_sim_e
+        max_sim_idx = cycle_means['simulation']['extension'] <= max_sim_e
+        sim_idx = np.logical_and(min_sim_idx, max_sim_idx)
+    else:
+        sim_idx = slice(None)
+
+    # Correlate forces of 'stress' and 'simulation'
+    a = cycle_means['simulation']['force'][sim_idx]
+    b = cycle_means['stress']['force']
+    #corr = np.correlate(a, b, 'valid')
+    #corr = np.convolve(a, b, 'valid')
+    #corr = match_template(np.atleast_2d(a)/a.max(), np.atleast_2d(b)/a.max()).T[:,0]
+    # divide by maximum value to prevent errors due to small float values
+    corr = correlate_template(a/a.max(), b/b.max())
+
+    # Find relative shift of simulation to stress in datapoints
+    max_peak_idx = np.argmax(corr)
+    # Try to find peaks with a minimum amplitude of 0.95 x the maximum
+    # correlation
+    peaks = scipy.signal.find_peaks(corr, corr[max_peak_idx]*peak_height)[0]
+    # If there are now peaks comparable to the height of the maximum
+    # correlation, choose the shift_x to be according to the position with same
+    # force of simulation and stress. Otherwise
+    if len(peaks) == 0 and search_window_e is not None:
+        shift_x_idx = start_sim_idx - np.argmax(min_sim_idx)
+    else:
+        shift_x_idx = max_peak_idx
+
+    # Get shift of extension in m
+    shift_x = cycle_means['simulation']['extension'][sim_idx][shift_x_idx] \
+                                        - cycle_means['stress']['extension'][0]
+
+    if plot:
+        fig, ax = plt.subplots()
+        ax.plot(corr)
+        ax.plot(shift_x_idx, corr[shift_x_idx], 'o')
+        ax.plot(peaks, corr[peaks], '.')
+        #ax2 = ax.twinx()
+        #ax2.plot(corr2)
+        #ax2.plot(np.diff(corr), '.')
+        fig.show()
+
+    return shift_x
 
 
 def add_areas(cycle_data):
