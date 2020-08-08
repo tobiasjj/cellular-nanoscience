@@ -74,12 +74,16 @@ def angle(v1, v2):
 
 
 def _get_speed_approx(tether, i, cycle=None):
+    # Determine the indices of the raw data of the the corresponding cycle
     cycle = 'stress' if cycle is None else cycle
     pair = tether.stress_release_pairs(i=i, info=True)
     j = 0 if cycle == 'stress' else 1
     idx = pair[j][0]
+    # Get the label of the trace of the excited axis
     ax = pair[2 + j][0,0]
     trace = {'x': 'positionX', 'y': 'positionY'}
+    # Get the raw data of the excited position (stage) movement
+    # and calculate the approximate speed
     position = tether.get_data(traces=trace[ax], samples=idx)
     amplitude = position.max() - position.min()
     duration = (idx.stop - idx.start) / tether.resolution
