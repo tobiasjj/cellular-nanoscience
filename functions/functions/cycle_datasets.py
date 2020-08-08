@@ -188,7 +188,7 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
         exp.close(abort=True)
 
     if save:
-        save_cycles_data(dataset, cycles_data,
+        save_cycles_data(cycles_data,
                          cycles_datas_dir=cycles_datas_dir)
 
     return cycles_data
@@ -349,6 +349,10 @@ def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
         xs, min_x=min_x, max_x=max_x, include_bounds=include_bounds)
     #idx_f = min_max_idx(
     #    f[idx_sort], min_x=min_f, max_x=max_f, include_bounds=include_bounds)
+    # TODO: Include bool parameter `continuous`, that lets the `step_idx()`
+    #       function only return the index of a step that is followed by a
+    #       continuous plateau until the end of the signal and not just the
+    #       index of the force exceeding the threshold the first time.
     idx_f = step_idx(fs, threshold_f, include_bounds=include_bounds)
     idx_crop = np.logical_and(idx_x, idx_f)
 
