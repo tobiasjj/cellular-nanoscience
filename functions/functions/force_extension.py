@@ -88,8 +88,8 @@ def _get_speed_approx(tether, i, cycle=None):
 
 
 def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
-                           bin_width_e=None, sortcolumn=0, fXYZ_factors=None,
-                           angles=False, extra_traces=None,
+                           bin_width_e=None, sortcolumn=0, dXYZ_factors=None,
+                           fXYZ_factors=None, angles=False, extra_traces=None,
                            angles_after_binning=False, phi_shift_twopi=False):
     """
     Parameters
@@ -114,6 +114,7 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
         13,14,15,16: theta (13,15) and phi (14,16) for extension and force
     """
     fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin,
+                                          dXYZ_factors=dXYZ_factors,
                                           fXYZ_factors=fXYZ_factors)
     (x_stress, y_stress, info_stress,
      x_release, y_release, info_release,
@@ -132,8 +133,10 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
         for c, idx in enumerate(idxs):  # 1: stress, 2: release
             if  angles:
                 # Get distance/force (vectors XYZ)
-                distanceXYZ = tether.distanceXYZ(samples=idx[0])
+                distanceXYZ = tether.distanceXYZ(samples=idx[0],
+                                                 dXYZ_factors=dXYZ_factors)
                 forceXYZ = tether.forceXYZ(samples=idx[0],
+                                           dXYZ_factors=dXYZ_factors,
                                            fXYZ_factors=fXYZ_factors)
                 # calculate angles theta and phi
                 angle_extension = np.array([
@@ -186,8 +189,8 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
 
 
 def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
-                         filter_length_e=None, edginess=1, fXYZ_factors=None,
-                         angles=False, extra_traces=None,
+                         filter_length_e=None, edginess=1, dXYZ_factors=None,
+                         fXYZ_factors=None, angles=False, extra_traces=None,
                          angles_after_filter=False, phi_shift_twopi=False):
     """
     Parameters
@@ -215,6 +218,7 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
         the individual FBNL_Filter_results of the filtered data
     """
     fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin,
+                                          dXYZ_factors=dXYZ_factors,
                                           fXYZ_factors=fXYZ_factors)
     (x_stress, y_stress, info_stress,
      x_release, y_release, info_release,
@@ -232,8 +236,10 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
         for c, idx in enumerate(idxs):  # 1: stress, 2: release
             if angles:
                 # Get distance/force (vectors XYZ)
-                distanceXYZ = tether.distanceXYZ(samples=idx[0])
+                distanceXYZ = tether.distanceXYZ(samples=idx[0],
+                                                 dXYZ_factors=dXYZ_factors)
                 forceXYZ = tether.forceXYZ(samples=idx[0],
+                                           dXYZ_factors=dXYZ_factors,
                                            fXYZ_factors=fXYZ_factors)
                 # calculate angles theta and phi
                 angle_extension = np.array([
@@ -355,9 +361,9 @@ def plot_angle_extension(x, theta_phi, axes=None, show=False):
 
 
 def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
-                           resolution=None, sortcolumn=0,
-                           ax=None, autoscale=True, xlim=None,
-                           ylim=None):
+                           resolution=None, sortcolumn=0, dXYZ_factors=None,
+                           fXYZ_factors=None, ax=None, autoscale=True,
+                           xlim=None, ylim=None):
     """
     Update the figure with force extension data.
 
@@ -373,6 +379,8 @@ def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
     result = binned_force_extension(tether=tether, i=i, posmin=posmin,
                                     bins=bins, resolution=resolution,
                                     sortcolumn=sortcolumn,
+                                    dXYZ_factors=dXYZ_factors,
+                                    fXYZ_factors=fXYZ_factors,
                                     extra_traces=extra_traces)
     edges, centers, widths, bin_means, bin_stds, bin_Ns = result
 
@@ -423,8 +431,8 @@ def clear_force_extension(ax=None):
 
 
 def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
-                         sortcolumn=0, autoscale=False, xlim=None, ylim=None,
-                         **kwargs):
+                         sortcolumn=0, dXYZ_factors=None, fXYZ_factors=None,
+                         autoscale=False, xlim=None, ylim=None, **kwargs):
     """
     Plot the force extension data with index `i` (see method
     `tether.force_extension_pairs()`) on tether.fe_figure.
@@ -453,6 +461,8 @@ def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
             resolution = None
         update_force_extension(tether, i, posmin=posmin, bins=bins,
                                resolution=resolution, sortcolumn=sortcolumn,
+                               dXYZ_factors=dXYZ_factors,
+                               fXYZ_factors=fXYZ_factors,
                                ax=ax, autoscale=autoscale,
                                xlim=(xlim_l, xlim_h),
                                ylim=(ylim_l, ylim_h), **kwargs)
