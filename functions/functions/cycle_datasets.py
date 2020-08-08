@@ -134,11 +134,8 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                                  resolution_sf=resolution_sf)
     tether.update()
     # tether.info(i=i)
-    if 'number_of_pairs' in dataset:
-        number_of_pairs = dataset['number_of_pairs']
-    else:
-        number_of_pairs = len(tether.stress_release_pairs()[0])
-        dataset['number_of_pairs'] = number_of_pairs
+    number_of_pairs = len(tether.stress_release_pairs()[0])
+    dataset['number_of_pairs'] = number_of_pairs
 
     # Get pair data and simulation for all cycles
     if i is None:
