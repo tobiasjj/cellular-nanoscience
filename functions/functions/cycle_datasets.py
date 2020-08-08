@@ -27,7 +27,7 @@ CYCLES_DATAS_DIR = './cycles_datas'
 CYCLES_MEANS_DIR = './cycles_means'
 
 def create_dataset(directory, dbname, kappa_z_factor, shift_x, c_rad52=0,
-                   c_count=0, number_of_pairs=0, key=None, datadir='data'):
+                   c_count=0, number_of_pairs=None, key=None, datadir='data'):
     directory = os.path.join(directory, datadir)
     dataset = {
         'key': key,
