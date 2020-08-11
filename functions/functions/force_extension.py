@@ -710,7 +710,7 @@ def get_simulation(tether, i, settings_file, posZ=None, individual_posZ=False,
     kappa_z_factor = 1 if kappa_z_factor is None else kappa_z_factor
     if excited_axis is None:
         axis = {'x': 0, 'y': 1}
-        ax = tether.stress_release_pairs(i=i)['info']['stress'][0,0]
+        ax = tether.stress_release_pairs(i=i)['stress']['info'][0,0]
         excited_axis = axis[ax]
     axes_kappa = [excited_axis, 2]
     kappa = kappa[axes_kappa] * np.array([1, kappa_z_factor])
