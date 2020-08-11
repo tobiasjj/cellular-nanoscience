@@ -232,12 +232,14 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     axis = {'x': 0, 'y': 1}
     ax = pair['stress']['info'][0,0]
     excited_axis = axis[ax]
-    data = pair
+    data = {}
+    data['settings'] = result['settings']
+    data['excited_axis'] = excited_axis
+    data.update(pair)
     for cycle in ['stress', 'release']:
-        data[cycle].update(result[result_data_key][cycle])
         for key, value in result['data'][cycle].items():
             data[cycle][key + '_raw'] = value
-    data['excited_axis'] = excited_axis
+        data[cycle].update(result[result_data_key][cycle])
 
     # Get/do the simulation considering the correction factor for kappa_z
     simulation_settings_file = SIMULATION_SETTINGS_FILE \
@@ -301,8 +303,8 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
             sim_values['{}_per_m'.format(ek)] = e_per_m_intp
 
     data['simulation'] = { 'key': sim_key }
-    data['simulation'].update(sim_values)
     data['simulation']['settings'] = simulation['settings']
+    data['simulation'].update(sim_values)
 
     return data
 
@@ -349,11 +351,6 @@ def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
     idx_crop.sort()
 
     return_value = {
-        'crop': idx_crop,
-        'xsort': idx_sort,
-        'xsort_crop': idx_sort_crop,
-        'valid_x': idx_x,
-        'valid_f': idx_f,
         'settings': {
             'cycle': cycle,
             'min_x': min_x,
@@ -361,7 +358,12 @@ def get_idcs(cycle_data, cycle='stress', min_x=None, max_x=None,
             'include_bounds': include_bounds,
             'threshold_f': threshold_f,
             'max_length_x': max_length_x
-        }
+        },
+        'crop': idx_crop,
+        'xsort': idx_sort,
+        'xsort_crop': idx_sort_crop,
+        'valid_x': idx_x,
+        'valid_f': idx_f
     }
 
     return return_value

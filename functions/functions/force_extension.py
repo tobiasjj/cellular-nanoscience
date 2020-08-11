@@ -175,7 +175,21 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
         bin_means = _add_angles(bin_means, phi_shift_twopi=phi_shift_twopi,
                                 key_suffix='_after')
 
-    return { 'data': data,
+    settings = {
+        'posmin': posmin,
+        'bins': bins,
+        'resolution': resolution,
+        'bin_width_e': bin_width_e,
+        'sortcolumn': sortcolumn,
+        'dXYZ_factors': dXYZ_factors,
+        'fXYZ_factors': fXYZ_factors,
+        'angles': angles,
+        'angles_after_binning': angles_after_binning,
+        'phi_shift_twopi': phi_shift_twopi
+    }
+
+    return { 'settings': settings,
+             'data': data,
              'edges': edges,
              'centers': centers,
              'width': width,
@@ -261,8 +275,20 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
         data_filtered = _add_angles(data_filtered,
                                     phi_shift_twopi=phi_shift_twopi,
                                     key_suffix='_after')
+    settings = {
+        'posmin': posmin,
+        'filter_time': filter_time,
+        'filter_length_e': filter_length_e,
+        'edginess': edginess,
+        'dXYZ_factors': dXYZ_factors,
+        'fXYZ_factors': fXYZ_factors,
+        'angles': angles,
+        'angles_after_filter': angles_after_filter,
+        'phi_shift_twopi': phi_shift_twopi
+    }
 
-    return { 'data': data,
+    return { 'settings': settings,
+             'data': data,
              'data_filtered': data_filtered,
              'fbnl_filters': fbnl_filters }
 
