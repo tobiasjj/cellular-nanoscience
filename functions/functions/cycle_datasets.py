@@ -98,10 +98,10 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                     deactivate_baseline_mod=False, baseline_decimate=1,
                     resolution_sf=None, simulation_settings_file=None,
                     simulations_dir=None, individual_posZ=True, fbnl=True,
-                    angles=True, extra_traces=None,
-                    angles_after_processing=True, phi_shift_twopi=True,
-                    weighted_energies=False, energy_keys=None,
-                    cycles_datas_dir=None, load=False, save=False, **kwargs):
+                    angles=True, angles_after_processing=True,
+                    phi_shift_twopi=True, weighted_energies=False,
+                    energy_keys=None, cycles_datas_dir=None, load=False,
+                    save=False, **kwargs):
     """
     Load data of all cycles for a dataset
     """
@@ -134,7 +134,7 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                                  resolution_sf=resolution_sf)
     tether.update()
     # tether.info(i=i)
-    number_of_pairs = len(tether.stress_release_pairs()[0])
+    number_of_pairs = len(tether.stress_release_pairs()['stress']['idx'])
     dataset['number_of_pairs'] = number_of_pairs
 
     # Get pair data and simulation for all cycles
@@ -151,7 +151,6 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                              simulations_dir=simulations_dir,
                              individual_posZ=individual_posZ,
                              fbnl=fbnl, angles=angles,
-                             extra_traces=extra_traces,
                              angles_after_processing=angles_after_processing,
                              phi_shift_twopi=phi_shift_twopi,
                              weighted_energies=weighted_energies,
@@ -171,11 +170,11 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                 'individual_posZ': individual_posZ,
                 'fbnl': fbnl,
                 'angles': angles,
-                'extra_traces': extra_traces,
                 'angles_after_processing': angles_after_processing,
                 'phi_shift_twopi': phi_shift_twopi,
                 'weighted_energies': weighted_energies,
-                'energy_keys': energy_keys
+                'energy_keys': energy_keys,
+                'kwargs': kwargs
             }
         }
         _cycles_data = [_cycle_data(i) for i in I]
@@ -193,10 +192,9 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
 
 def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                     simulations_dir=None, individual_posZ=True, fbnl=True,
-                    angles=True, extra_traces=None,
-                    angles_after_processing=True, phi_shift_twopi=True,
-                    weighted_energies=False, energy_keys=None,
-                    **kwargs):
+                    angles=True, angles_after_processing=True,
+                    phi_shift_twopi=True, weighted_energies=False,
+                    energy_keys=None, **kwargs):
     # Short notation for tether
     t = tether
 
@@ -210,54 +208,36 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
             'filter_length_e': 5e-9,  # m
             'edginess': 1,  # int
             'angles_after_filter': angles_after_processing }
-        # data_filtered, fbnl_filters = result
-        result_data_idx = 0
+        # data, data_filtered, fbnl_filters
+        result_data_key = 'data_filtered'
     else:
         processing_function = binned_force_extension
         process_kwargs = {
             'bin_width_e': 5e-9,  # m
             'sortcolumn': 0,  # 0: time, 1: extension
             'angles_after_binning': angles_after_processing }
-        # bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns = result
-        result_data_idx = 3
+        # edges, centers, width, bin_Ns, bin_means, bin_stds
+        result_data_key = 'bin_means'
     process_kwargs.update(kwargs)
+    msg = 'Process data for cycle i = {} ...                  \r'.format(i)
+    print(msg, end='', flush=True)
     result = processing_function(t, i, fXYZ_factors=fXYZ_factors,
-                                 angles=angles, extra_traces=extra_traces,
+                                 angles=angles,
                                  phi_shift_twopi=phi_shift_twopi,
                                  **process_kwargs)
-    result_data = result[result_data_idx]
 
-    # Select corresponding bin_means and assign to easy to remember variable
-    # names
-    data = {}
-    # Get excited axis
+    # Combine filtered data, raw data, info (pair) from tether object and
+    # excited axis
+    pair = t.stress_release_pairs(i=i)
     axis = {'x': 0, 'y': 1}
-    ax = t.stress_release_pairs(i=i, info=True)[2][0,0]
+    ax = pair['stress']['info'][0,0]
     excited_axis = axis[ax]
+    data = pair
+    for cycle in ['stress', 'release']:
+        data[cycle].update(result[result_data_key][cycle])
+        for key, value in result['data'][cycle].items():
+            data[cycle][key + '_raw'] = value
     data['excited_axis'] = excited_axis
-    for c, cycle_name in zip([0, 1], ['stress', 'release']):
-        data[cycle_name] = {}
-        d = data[cycle_name]
-
-        idx = 0
-        d['time'] = result_data[c][:,idx]; idx += 1
-        d['extension'] = result_data[c][:,idx]; idx += 1
-        d['force'] = result_data[c][:,idx]; idx += 1
-        if angles:
-            d['angles_extension'] = result_data[c][:,idx:idx+2]; idx += 2
-            d['angles_force'] = result_data[c][:,idx:idx+2]; idx += 2
-            d['distanceXYZ'] = result_data[c][:,idx:idx+3]; idx += 3
-            d['forceXYZ'] = result_data[c][:,idx:idx+3]; idx += 3
-        if extra_traces is not None:
-            columns = 3  # time, extension, force
-            if angles: columns += 10
-            if angles and angles_after_processing: columns += 4
-            columns_total = result_data[c].shape[1]
-            columns_extra = columns_total - columns
-            d['extra'] = result_data[c][:,idx:idx+columns_extra]; idx += columns_extra
-        if angles and angles_after_processing:
-            d['angles_extension_after'] = result_data[c][:,idx:idx+2]; idx += 2
-            d['angles_force_after'] = result_data[c][:,idx:idx+2]; idx += 2
 
     # Get/do the simulation considering the correction factor for kappa_z
     simulation_settings_file = SIMULATION_SETTINGS_FILE \
@@ -269,7 +249,7 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
         posZ = None
     else:
         posZ = np.median(t.get_data('positionZ', samples=None))
-    msg = 'Get simulation for cycle i = {} ...\r'.format(i)
+    msg = 'Get simulation for cycle i = {} ...                \r'.format(i)
     print(msg, end='', flush=True)
     simulation = get_simulation(t, i, simulation_settings_file, posZ=posZ,
                                 individual_posZ=individual_posZ,
@@ -284,6 +264,8 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     #    #'e_lev'  # does not depend on extension but rather on distance
     #]
     #energy_keys = e_keys if energy_keys is None else energy_keys
+    msg = 'Get simulation values for cycle i = {} ...         \r'.format(i)
+    print(msg, end='', flush=True)
     sim_values = uzsi.get_simulation_values(simulation, fe_xyz=True,
                                             weighted_energies=weighted_energies,
                                             energy_keys=energy_keys)
@@ -294,6 +276,8 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     # between the simulated extension points, interpolate energy gains by
     # weighting each energy gain difference with its corresponding extensions.
     if weighted_energies:
+        msg = 'Calculate normalized energies for cycle i = {} ... \r'.format(i)
+        print(msg, end='', flush=True)
         ex_diff = np.diff(sim_values['extension'])
         sim_keys = sim_values.keys()
         e_keys = [sim_key for sim_key in sim_keys if sim_key.startswith('e_')]
@@ -543,9 +527,11 @@ def get_cycle_means_data(cycle_data, cycle, idx=None, shift_x=None,
     # Determine edges for the first cycle and use these for all subsequent
     # cycles
     resolution = 1/4e-9 if resolution is None else resolution
-    edges, centers, width, bin_means = \
-        calculate_bin_means(data2d.astype(float), bins=edges,
-                            resolution=resolution)[:4]
+    result = calculate_bin_means(data2d.astype(float), bins=edges,
+                                 resolution=resolution)
+    edges = result['edges']
+    centers = result['centers']
+    bin_means = result['bin_means']
 
     # Select values that are valid
     try:
@@ -1055,9 +1041,9 @@ def plot_cycle_data(cycle_data, release=False, bps_A=None, bps_B=None,
     nuz = data['simulation']['nuz']
     # Get the angles of force and extension vectors
     # 0: theta_extension, 1: phi_exension
-    ext_theta_phi = data['stress']['angles_extension_after']
+    ext_theta_phi = data['stress']['angle_extension_after']
     # 0: theta_force, 1: phi_force
-    force_theta_phi = data['stress']['angles_force_after']
+    force_theta_phi = data['stress']['angle_force_after']
 
     fig, axes = plt.subplots(3, 1)
 

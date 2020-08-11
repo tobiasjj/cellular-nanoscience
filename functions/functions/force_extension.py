@@ -76,11 +76,10 @@ def angle(v1, v2):
 def _get_speed_approx(tether, i, cycle=None):
     # Determine the indices of the raw data of the the corresponding cycle
     cycle = 'stress' if cycle is None else cycle
-    pair = tether.stress_release_pairs(i=i, info=True)
-    j = 0 if cycle == 'stress' else 1
-    idx = pair[j][0]
-    # Get the label of the trace of the excited axis
-    ax = pair[2 + j][0,0]
+    pairs = tether.stress_release_pairs(i=i)
+    # Get the index and the label of the trace of the excited axis
+    idx = pairs[cycle]['idx'][0]
+    ax = pairs[cycle]['info'][0,0]
     trace = {'x': 'positionX', 'y': 'positionY'}
     # Get the raw data of the excited position (stage) movement
     # and calculate the approximate speed
@@ -93,7 +92,7 @@ def _get_speed_approx(tether, i, cycle=None):
 
 def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
                            bin_width_e=None, sortcolumn=0, dXYZ_factors=None,
-                           fXYZ_factors=None, angles=False, extra_traces=None,
+                           fXYZ_factors=None, angles=False,
                            angles_after_binning=False, phi_shift_twopi=False):
     """
     Parameters
@@ -117,39 +116,77 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
     angles_after_binning : bool
         13,14,15,16: theta (13,15) and phi (14,16) for extension and force
     """
-    # Get the force extension data from the tether
-    data = _force_extension_data(tether=tether, i=i, posmin=posmin,
-                                 dXYZ_factors=dXYZ_factors,
-                                 fXYZ_factors=fXYZ_factors, angles=angles,
-                                 extra_traces=extra_traces,
-                                 phi_shift_twopi=phi_shift_twopi)
+    # Get the force, extension, etc. data from the tether
+    data = tether.force_extension_pair(i=i, posmin=posmin,
+                                       dXYZ_factors=dXYZ_factors,
+                                       fXYZ_factors=fXYZ_factors)
 
-    edges = [None]*2
-    centers = [None]*2
-    widths = [None]*2
-    bin_means = [None]*2
-    bin_stds = [None]*2
-    bin_Ns = [None]*2
-    for c, cycle in enumerate(['stress', 'release']):  # 0=stress, 1=release
+    # Add angles of force and extension
+    if angles:
+        data = _add_angles(data, phi_shift_twopi=phi_shift_twopi)
+
+    edges = {}
+    centers = {}
+    width = {}
+    bin_means = {}
+    bin_stds = {}
+    bin_Ns = {}
+    for cycle in [ 'stress', 'release' ]:
+        # Concatenate data array
+        keys = list(data[cycle].keys())
+        columns = []
+        d = []
+        for key in keys:
+            _d = data[cycle][key]
+            if _d.ndim == 1:
+               _d = np.expand_dims(_d, axis=1)
+            columns.append(_d.shape[1])
+            d.append(_d)
+        d = np.concatenate(d, axis=1)
+
+        # Calculate bin width of time according to bin width of extension
         if bins is None and resolution is None and bin_width_e is not None:
             speed = _get_speed_approx(tether, i, cycle)
             resolution = speed / bin_width_e
             sortcolumn = 0
-        result = calculate_bin_means(data[c], bins=bins, resolution=resolution,
+
+        # Bin the data
+        result = calculate_bin_means(d, bins=bins,
+                                     resolution=resolution,
                                      sortcolumn=sortcolumn)
-        (edges[c], centers[c], widths[c],
-         bin_means[c], bin_stds[c], bin_Ns[c]) = result
+        edges[cycle] = result['edges']
+        centers[cycle] = result['centers']
+        width[cycle] = result['width']
+        bin_Ns[cycle] = result['bin_Ns']
+
+        # Separate data arrays
+        bin_means[cycle] = {}
+        bin_stds[cycle] = {}
+        start = 0
+        stop = 0
+        for key, column in zip(keys, columns):
+            stop += column
+            bin_means[cycle][key] = result['bin_means'][:,start:stop].squeeze()
+            bin_stds[cycle][key] = result['bin_stds'][:,start:stop].squeeze()
+            start = stop
 
     # Calculate angles with already binned distance/force data
-    if angles and angles_after_binning:
-        bin_means = _append_angles(bin_means, phi_shift_twopi=phi_shift_twopi)
+    if angles_after_binning:
+        bin_means = _add_angles(bin_means, phi_shift_twopi=phi_shift_twopi,
+                                key_suffix='_after')
 
-    return edges, centers, widths, bin_means, bin_stds, bin_Ns
+    return { 'data': data,
+             'edges': edges,
+             'centers': centers,
+             'width': width,
+             'bin_Ns': bin_Ns,
+             'bin_means': bin_means,
+             'bin_stds': bin_stds }
 
 
 def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
                          filter_length_e=None, edginess=1, dXYZ_factors=None,
-                         fXYZ_factors=None, angles=False, extra_traces=None,
+                         fXYZ_factors=None, angles=False,
                          angles_after_filter=False, phi_shift_twopi=False):
     """
     Parameters
@@ -170,18 +207,20 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
     Returns
     -------
     filtered_data, fbnl_filters
-        filtered_data is a list of two np.ndarrays (0: stress, 1: release)
+        filtered_data is a dict of two np.ndarrays (stress, release)
         each array has the filtered data with the columns 0: time, 1: extension
         2: force, and extra traces/angles
-        fbnl_filters is a list of two lists (0: stress, 1: release) containing
+        fbnl_filters is a dict of two lists (stress, release) containing
         the individual FBNL_Filter_results of the filtered data
     """
-    # Get the force extension data from the tether
-    data = _force_extension_data(tether=tether, i=i, posmin=posmin,
-                                 dXYZ_factors=dXYZ_factors,
-                                 fXYZ_factors=fXYZ_factors, angles=angles,
-                                 extra_traces=extra_traces,
-                                 phi_shift_twopi=phi_shift_twopi)
+    # Get the force, extension, etc. data from the tether
+    data = tether.force_extension_pair(i=i, posmin=posmin,
+                                       dXYZ_factors=dXYZ_factors,
+                                       fXYZ_factors=fXYZ_factors)
+
+    # Add angles of force and extension
+    if angles:
+        data = _add_angles(data, phi_shift_twopi=phi_shift_twopi)
 
     # Filter the data
     resolution = tether.resolution
@@ -193,90 +232,59 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
     window = window_var = max(int(np.round(filter_time * resolution)), 1)
     pad_data = True
 
-    fbnl_filters = [[],[]]
-    for c, cycle in enumerate(['stress', 'release']):  # 0=stress, 1=release
+    fbnl_filters = {}
+    data_filtered = {}
+    for cycle in [ 'stress', 'release' ]:
+        fbnl_filters[cycle] = {}
+        data_filtered[cycle] = {}
         if filter_length_e is not None:
             speed = _get_speed_approx(tether, i, cycle)
             filter_time = filter_length_e / speed  # s
             window = window_var = max(int(np.round(filter_time * resolution)), 1)
-        for t in range(1, data[c].shape[1]):  # 1: extension, 2: force, 3: ...
-            d = data[c][:, t]
-            fbnl_filter = filter_fbnl(d, resolution, window=window,
-                                      window_var=window_var, p=edginess,
-                                      pad_data=pad_data)
-            data[c][:, t] = fbnl_filter.data_filtered
-            fbnl_filters[c].append(fbnl_filter)
+        for key in data[cycle]:  # time, extension, force, ...
+            d = data[cycle][key]
+            if d.ndim == 1: d = [d]
+            else: d = d.T
+            rs = []
+            rs_data = []
+            for _d in d:
+                r = filter_fbnl(_d, resolution, window=window,
+                                window_var=window_var, p=edginess,
+                                pad_data=pad_data)
+                rs.append(r)
+                rs_data.append(np.expand_dims(r.data_filtered, axis=1))
+                fbnl_filters[cycle][key] = rs
+            data_filtered[cycle][key] = np.concatenate(rs_data, axis=1).squeeze()
 
     # Calculate angles with already filtered distance/force data
-    if angles and angles_after_filter:
-        data = _append_angles(data, phi_shift_twopi=phi_shift_twopi)
+    if angles_after_filter:
+        data_filtered = _add_angles(data_filtered,
+                                    phi_shift_twopi=phi_shift_twopi,
+                                    key_suffix='_after')
 
-    return data, fbnl_filters
-
-
-def _force_extension_data(tether, i, posmin=10e-9, dXYZ_factors=None,
-                          fXYZ_factors=None, angles=False, extra_traces=None,
-                          phi_shift_twopi=False):
-
-    fe_pair = tether.force_extension_pair(i=i, time=True, posmin=posmin,
-                                          dXYZ_factors=dXYZ_factors,
-                                          fXYZ_factors=fXYZ_factors)
-    (x_stress, y_stress, info_stress,
-     x_release, y_release, info_release,
-     t_stress, t_release) = fe_pair
-
-    data = [None]*2  # 0: stress, 1: release
-    data[0] = np.c_[t_stress, x_stress, y_stress]
-    data[1] = np.c_[t_release, x_release, y_release]
-    if angles or extra_traces is not None:
-        # Get stress/release indices of stress/release pair i
-        idxs = tether.stress_release_pairs(i=i)
-
-        # Calculate angles for stress and release of extension and force
-        # vectors
-        for c, idx in enumerate(idxs):  # 1: stress, 2: release
-            if angles:
-                # Get distance/force (vectors XYZ)
-                distanceXYZ = tether.distanceXYZ(samples=idx[0],
-                                                 dXYZ_factors=dXYZ_factors)
-                forceXYZ = tether.forceXYZ(samples=idx[0],
-                                           dXYZ_factors=dXYZ_factors,
-                                           fXYZ_factors=fXYZ_factors)
-                # calculate angles theta and phi
-                angle_extension = np.array([
-                    cart2sph(*point)[1:] for point in distanceXYZ
-                    ])*180/math.pi
-                angle_force = np.array([
-                    cart2sph(*point)[1:] for point in forceXYZ
-                    ])*180/math.pi
-                if phi_shift_twopi:
-                    angle_extension[angle_extension[:,1] < 0.0, 1] += 360
-                    angle_force[angle_force[:,1] < 0.0, 1] += 360
-                data[c] = np.c_[data[c], angle_extension, angle_force,
-                                distanceXYZ, forceXYZ]
-            if extra_traces is not None:
-                extra_data = tether.get_data(traces=extra_traces,
-                                             samples=idx[0])
-                data[c] = np.c_[data[c], extra_data]
-
-    return data
+    return { 'data': data,
+             'data_filtered': data_filtered,
+             'fbnl_filters': fbnl_filters }
 
 
-def _append_angles(data, phi_shift_twopi=False):
-    # Calculate angles with already processed distance/force data
-    for c in range(2):  # 1: stress, 2: release
+def _add_angles(data, phi_shift_twopi=False, key_suffix=''):
+    # Calculate angles theta and phi of distance (i.e. extension) and force
+    # vectors for cycles stress and release
+    for c in [ 'stress', 'release' ]:
         angle_extension = np.array([
-            cart2sph(*point)[1:]
-            for point in data[c][:, 7:10]])*180/math.pi
+            cart2sph(*point)[1:] for point in data[c]['distanceXYZ']
+            ])*180/math.pi
         angle_force = np.array([
-            cart2sph(*point)[1:]
-            for point in data[c][:, 10:13]])*180/math.pi
+            cart2sph(*point)[1:] for point in data[c]['forceXYZ']
+            ])*180/math.pi
         if phi_shift_twopi:
             angle_extension[angle_extension[:,1] < 0.0, 1] += 360
             angle_force[angle_force[:,1] < 0.0, 1] += 360
-        data[c] = np.c_[data[c], angle_extension, angle_force]
+        data[c]['angle_extension' + key_suffix] = angle_extension
+        data[c]['angle_force' + key_suffix] = angle_force
 
     return data
+
 
 def plot_force_extension(x, y, ystd=None, yerr=None, ax=None, show=False):
     if ax is None:
@@ -353,28 +361,20 @@ def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
     ylim : (float, float), optional
         Set ylim of the axis.
     """
-    extra_traces = None
-    # Calculate binned force extension data
-    result = binned_force_extension(tether=tether, i=i, posmin=posmin,
-                                    bins=bins, resolution=resolution,
-                                    sortcolumn=sortcolumn,
-                                    dXYZ_factors=dXYZ_factors,
-                                    fXYZ_factors=fXYZ_factors,
-                                    extra_traces=extra_traces)
-    edges, centers, widths, bin_means, bin_stds, bin_Ns = result
-
-    # time: 0, extension: 1, force: 2
-    plotx = 1
-    ploty = 2
-
     ax = ax or plt.gcf().gca()
     clear_force_extension(ax=ax)
 
-    for d in range(2):  # 0 = stress, 1 = release
-        e = bin_means[d][:, plotx]
-        f = bin_means[d][:, ploty]
-        fstd = bin_stds[d][:, ploty]
-        ferr = bin_stds[d][:, ploty] / np.sqrt(bin_Ns[d])
+    # Calculate binned force extension data
+    r = binned_force_extension(tether=tether, i=i, posmin=posmin, bins=bins,
+                               resolution=resolution, sortcolumn=sortcolumn,
+                               dXYZ_factors=dXYZ_factors,
+                               fXYZ_factors=fXYZ_factors)
+
+    for c in [ 'stress', 'release' ]:
+        e = r['bin_means'][c]['extension']
+        f = r['bin_means'][c]['force']
+        fstd = r['bin_stds'][c]['force']
+        ferr = r['bin_stds'][c]['force'] / np.sqrt(r['bin_Ns'][c])
         plot_force_extension(e, f, fstd, ferr, ax=ax)
 
     '''
@@ -454,7 +454,7 @@ def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
     ylim = ylim or _ylim
 
     # Get number of all force extension pairs
-    stop = len(tether.stress_release_pairs(**kwargs)[0])
+    stop = len(tether.stress_release_pairs(**kwargs)['stress']['idx'])
 
     # Build user interface (ui)
     index = BoundedIntText(value=i, min=0, max=stop - 1, description='FE_pair:')
@@ -530,17 +530,17 @@ def autolimits(tether, posmin=10e-9, samples=None, e=None, f=None, xlim=None,
     if samples is None \
             and (xlim is None and e is None) \
             or (ylim is None and f is None):
-        # Get the start/stop indices of the data to be used to determine
-        # the min max values
-        sts, rls = tether.stress_release_pairs()
-        start = sts[0].start
-        stop = rls[-1].stop
+        # Get the start/stop indices of the data to be used to determine the
+        # min max values
+        pairs = tether.stress_release_pairs(slices=True)
+        start = pairs['stress']['idx'][0].start
+        stop = pairs['release']['idx'][-1].stop
         samples = slice(start, stop)
 
     if xlim is None and ylim is None and e is None and f is None:
         e_f = tether.force_extension(samples=samples, posmin=posmin)  # m, N
-        e = e_f[:, 0]
-        f = e_f[:, 1]
+        e = e_f['extension']
+        f = e_f['force']
     if xlim is None and e is None:
         e = tether.extension(samples=samples, posmin=posmin) # m
     if ylim is None and f is None:
@@ -684,7 +684,7 @@ def get_simulation(tether, i, settings_file, posZ=None, individual_posZ=False,
     kappa_z_factor = 1 if kappa_z_factor is None else kappa_z_factor
     if excited_axis is None:
         axis = {'x': 0, 'y': 1}
-        ax = tether.stress_release_pairs(i=i, info=True)[2][0,0]
+        ax = tether.stress_release_pairs(i=i)['info']['stress'][0,0]
         excited_axis = axis[ax]
     axes_kappa = [excited_axis, 2]
     kappa = kappa[axes_kappa] * np.array([1, kappa_z_factor])
@@ -735,39 +735,38 @@ def plot_unzip_data(tether, I, ax=None, fbnl=False, shift_x=0e-9, t_delta=15,
         ### Get and plot raw force extension
         if plot_raw:
             # Get raw extension and force for stress and release cycle
-            fe_pair = tether.force_extension_pair(i=i, time=True)
-            (x_stress, f_stress, info_stress,
-             x_release, f_release, info_release,
-             t_stress, t_release) = fe_pair
-            extension_raw = np.r_[x_stress, x_release]
-            force_raw = np.r_[f_stress, f_release]
-            ax.plot((extension_raw + shift_x) * 1e9, force_raw * 1e12, c='#CCCCCC')
+            pair = tether.force_extension_pair(i=i)
+            extension_raw = np.r_[pair['stress']['extension'],
+                                  pair['release']['extension']]
+            force_raw = np.r_[pair['stress']['force'],
+                              pair['release']['force']]
+            ax.plot((extension_raw + shift_x) * 1e9, force_raw * 1e12,
+                    c='#CCCCCC')
 
-        ###############################################################################
+        #######################################################################
         ### Get and plot force extension curve and simulation
         if fbnl:
             # Get fbnl_filter filtered force extension
             result = fbnl_force_extension(tether, i, **filter_kwargs)
-            filtered_data, fbnl_filters = result  # 0: stress, 1: release
+            filtered_data = result['filtered_data']  # stress, release
         else:
             # Get binned force extension
-            bin_edges, bin_centers, bin_widths, bin_means, bin_stds, bin_Ns \
-                = binned_force_extension(tether, i, **filter_kwargs)
-            filtered_data = bin_means  # 0: stress, 1: release
+            result = binned_force_extension(tether, i, **filter_kwargs)
+            filtered_data = result['bin_means']  # stress, release
 
         # Get tmin and tmax from the first stress and the last release cycle datapoint
-        tmin = filtered_data[0][0,0] + t_delta
-        tmax = filtered_data[1][-1,0] + t_delta
+        tmin = filtered_data['stress']['time'][0] + t_delta
+        tmax = filtered_data['release']['time'][-1] + t_delta
         time = '$t={:3.0f}-{:3.0f}\,s$'.format(tmin, tmax)
         time = '$t={:3.0f}\,s$'.format((tmin+tmax)/2)
 
-        # Plot release cycle [1]
+        # Plot release cycle
         if plot_release:
-            cycle = 1
+            cycle = 'release'
             pre = 'rls '
             c = 'magenta'
-            ax.plot((filtered_data[cycle][:,1] + shift_x) * 1e9,
-                    filtered_data[cycle][:,2] * 1e12,
+            ax.plot((filtered_data[cycle]['extension'] + shift_x) * 1e9,
+                    filtered_data[cycle]['force'] * 1e12,
                     label='{}{}'.format(pre, time))
             if annotate_release:
                 ax.annotate('Release', xy=(700, 23), xycoords='data', color=c)
@@ -776,13 +775,13 @@ def plot_unzip_data(tether, I, ax=None, fbnl=False, shift_x=0e-9, t_delta=15,
                 ax.annotate("", xytext=(700, 22), xy=(750, 22), xycoords='data',
                             arrowprops=dict(linewidth=1.25, arrowstyle="<-", color=c))
 
-        # Plot stress cycle [0]
+        # Plot stress cycle
         if plot_stress:
-            cycle = 0
+            cycle = 'stress'
             pre = 'str '
             c = 'cyan'
-            ax.plot((filtered_data[cycle][:,1] + shift_x) * 1e9,
-                    filtered_data[cycle][:,2] * 1e12,
+            ax.plot((filtered_data[cycle]['extension'] + shift_x) * 1e9,
+                    filtered_data[cycle]['force'] * 1e12,
                     label='{}{}'.format(pre, time))
             if annotate_stress:
                 ax.annotate('Stretch', xy=(600, 23), xycoords='data', color=c)

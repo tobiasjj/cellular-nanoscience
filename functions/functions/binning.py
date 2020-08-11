@@ -98,7 +98,12 @@ def calculate_bin_means(data, bins=None, resolution=None, sortcolumn=0):
     bin_stds = np.array([data[bin_idx == i].std(axis=0, ddof=1)
                          for i in range(1, len(edges))])
 
-    return edges, centers, width, bin_means, bin_stds, bin_Ns
+    return { 'edges': edges,
+             'centers': centers,
+             'width': width,
+             'bin_Ns': bin_Ns,
+             'bin_means': bin_means,
+             'bin_stds': bin_stds }
 
 
 def calculate_bin_means_ND(data, bins=None):
@@ -197,7 +202,12 @@ def calculate_bin_means_ND(data, bins=None):
     #mean_xy = mean_xy[1:-1, 1:-1]
     #std_xy = std_xy[1:-1, 1:-1]
 
-    return edges, centers, widths, bin_means, bin_stds, bin_Ns
+    return { 'edges': edges,
+             'centers': centers,
+             'widths': widths,
+             'bin_Ns': bin_Ns,
+             'bin_means': bin_means,
+             'bin_stds': bin_stds }
 
 
 def get_edges(data, bins=None):
