@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from scipy.integrate import simps, cumtrapz
 
-from .binning import calculate_bin_means
+from .binning import calculate_bin_means, concatenate_data_dict, separate_data_array
 from .helpers import compare_idx, min_max_idx, step_idx
 from .force_extension import binned_force_extension, fbnl_force_extension, \
                              get_simulation
@@ -195,6 +195,14 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                     angles=True, angles_after_processing=True,
                     phi_shift_twopi=True, weighted_energies=False,
                     energy_keys=None, **kwargs):
+    """
+    Parameters
+    ----------
+    energy_keys : list of str
+        possible energy keys:
+            depending on extension: 'e_ext_ssDNA', 'e_ext_dsDNA', 'e_unzip_DNA',
+            depening on displacement: 'e_lev'
+    """
     # Short notation for tether
     t = tether
 
@@ -259,13 +267,6 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
                                 excited_axis=excited_axis,
                                 simulations_dir=simulations_dir)
     sim_key = uzsi.get_key(**simulation['settings'])
-    #e_keys = [
-    #    'e_ext_ssDNA',
-    #    'e_ext_dsDNA',
-    #    'e_unzip_DNA',
-    #    #'e_lev'  # does not depend on extension but rather on distance
-    #]
-    #energy_keys = e_keys if energy_keys is None else energy_keys
     msg = 'Get simulation values for cycle i = {} ...         \r'.format(i)
     print(msg, end='', flush=True)
     sim_values = uzsi.get_simulation_values(simulation, fe_xyz=True,
@@ -477,59 +478,32 @@ def _window_sum(data, window_len):
     return window_sum[:-window_len]
 
 
-def _get_cycle_2d(cycle_data, cycle, x_key=None, y_key=None):
-    """
-    Get extension and force as a 2D array, with the extension
-    beeing in the first and the force in the second column.
-    """
-    x_key = 'extension' if x_key is None else x_key
-    y_key = 'force' if y_key is None else y_key
-    x = cycle_data[cycle][x_key]
-    y = cycle_data[cycle][y_key]
-    if cycle == 'simulation':
-        n = cycle_data[cycle]['nuz']
-        d = cycle_data[cycle]['displacementXYZ']
-        try:
-            e1 = cycle_data[cycle]['e_ext_ssDNA_per_m']
-            e2 = cycle_data[cycle]['e_ext_dsDNA_per_m']
-            e3 = cycle_data[cycle]['e_unzip_DNA_per_m']
-            #e4 = cycle_data[cycle]['e_lev']
-            return np.c_[x, y, n, d, e1, e2, e3]
-        except KeyError:
-            return np.c_[x, y, n, d]
-
-    return np.c_[x, y]
-
-
-def get_cycle_means_data(cycle_data, cycle, idx=None, shift_x=None,
-                         edges=None, resolution=None):
+def get_cycle_mean_data(cycle_data, cycle, keys, idx=None, shift_x=None,
+                        edges=None, resolution=None):
     """
     Parameters
     ----------
     resolution : float
         The resolution in m⁻¹ of the binned data. The edges of the bins are
         determined by using the extension of the `edges_cycle`. Defaults to
-        1/4e-9.
+        1/5e-9.
     """
-    # Get extension, force, etc. as a 2d array
-    data2d = _get_cycle_2d(cycle_data, cycle)
+    # Concatenate extension, force, etc. into one data array with extension
+    # in the first column
+    data_array, keys, columns = concatenate_data_dict(cycle_data[cycle], keys)
 
-    # select subset of data according to `idx_key`
+    # Select subset of data according to `idx_key`
     if idx is not None:
-        #idx = cycle_data[cycle]['idcs'][idx]
-        data2d = data2d[idx]
+        data_array = data_array[idx]
 
-    # Shift extension to align with optionally provided edges and revert
-    # after having binned the data
+    # Shift extension to align with optionally provided edges and revert after
+    # having binned the data
     shift_x = 0 if shift_x is None else shift_x
-    data2d[:,0] += shift_x
+    data_array[:,0] += shift_x
 
-    # Calculate bin means
-    # cast values of simulation mpmath.mpf to float
-    # Determine edges for the first cycle and use these for all subsequent
-    # cycles
-    resolution = 1/4e-9 if resolution is None else resolution
-    result = calculate_bin_means(data2d.astype(float), bins=edges,
+    # Calculate bin means, cast values of simulation mpmath.mpf to float,
+    resolution = 1/5e-9 if resolution is None else resolution
+    result = calculate_bin_means(data_array.astype(float), bins=edges,
                                  resolution=resolution)
     edges = result['edges']
     centers = result['centers']
@@ -537,36 +511,28 @@ def get_cycle_means_data(cycle_data, cycle, idx=None, shift_x=None,
 
     # Select values that are valid
     try:
-        valid_idx = np.logical_and(edges[:-1] >= data2d[:,0].min(),
-                                   edges[1:] <= data2d[:,0].max())
+        valid = np.logical_and(edges[:-1] >= data_array[:,0].min(),
+                               edges[1:] <= data_array[:,0].max())
     except ValueError:
-        valid_idx = np.array([], dtype=int)
-    data = {
-        'extension': bin_means[valid_idx,0] - shift_x,
-        'force': bin_means[valid_idx,1],
-        'ext_centers': centers[valid_idx] - shift_x,
-        'shift_x': shift_x,
-        'edges': edges - shift_x,
-        'resolution': resolution,
-        'sim_idx': np.where(valid_idx)[0]
-    }
-    if cycle == 'simulation':
-        data['nuz'] = bin_means[valid_idx,2]
-        data['displacement'] = bin_means[valid_idx,3:5]
-        try:
-            data['e_ext_ssDNA_per_m'] = bin_means[valid_idx,5]
-            data['e_ext_dsDNA_per_m'] = bin_means[valid_idx,6]
-            data['e_unzip_DNA_per_m'] = bin_means[valid_idx,7]
-            #data['e_lev'] = bin_means[valid_idx,8]
-        except KeyError:
-            pass
+        valid = np.array([], dtype=int)
+
+    # Separata data array into dictionary and revert shift of extension
+    data = separate_data_array(bin_means[valid], keys, columns)
+    data['extension'] -= shift_x
+
+    # Add values not contained in bin_means
+    data['ext_centers'] = centers[valid] - shift_x
+    data['shift_x'] = shift_x
+    data['edges'] = edges - shift_x
+    data['resolution'] = resolution
+    data['sim_idx'] = np.where(valid)[0]
+
     return data
 
 
 def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
                            threshold_f=None, search_window_e=None, edges=None,
                            resolution=None):
-    cycle_means = {}
     # Determine shift_x to align 'simulation' with 'stress' and 'release' cycle
     try:
         align_x = _get_shift_x(cycle_data, min_x=min_x,
@@ -575,17 +541,26 @@ def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
                                search_window_e=search_window_e, plot=False)
     except ValueError:
         align_x = 0
+    cycle_keys = ['extension', 'force', 'displacementXYZ', 'forceXYZ',
+                  'positionXYZ', 'distanceXYZ']
+    _sim_keys = ['extension', 'force', 'displacementXYZ', 'forceXYZ', 'nuz',
+                 'e_ext_ssDNA_per_m', 'e_ext_dsDNA_per_m',
+                 'e_unzip_DNA_per_m', 'e_lev_per_m']
+    sim_keys = [key for key in _sim_keys if key in
+                cycle_data['simulation'].keys()]
+    cycle_mean = {}
     shift_x = 0
-    for cycle in ['simulation', 'stress', 'release']:
-        cycle_means[cycle] = get_cycle_means_data(cycle_data, cycle,
-                                                  shift_x=shift_x, edges=edges,
-                                                  resolution=resolution)
-        # Align 'stress' and 'release' with simulation, i.e. set edges to the
-        # ones from 'simulation' and shift by 'shift_x'
-        edges = cycle_means[cycle]['edges']
+    for cycle, keys in zip(['simulation', 'stress', 'release'],
+                           [sim_keys, cycle_keys, cycle_keys]):
+        cycle_mean[cycle] = get_cycle_mean_data(cycle_data, cycle, keys,
+                                                shift_x=shift_x, edges=edges,
+                                                resolution=resolution)
+        # Align 'stress' and 'release' with simulation, i.e. for the next cycle
+        # set shift_x to calculated one and edges to the ones from 'simulation'
         shift_x = align_x
+        edges = cycle_mean[cycle]['edges']
 
-    return cycle_means
+    return cycle_mean
 
 
 def _get_shift_x(cycle_data, min_x=None, max_length_x=None, threshold_f=None,
@@ -629,14 +604,16 @@ def _get_shift_x(cycle_data, min_x=None, max_length_x=None, threshold_f=None,
     # No further sorting necessary, as bin means are already sorted along e
     idx = None
     edges = None
+    keys = ['extension', 'force']
     cycle_means = {}
     for cycle in ['simulation', 'stress']:
-        data = get_cycle_means_data(cycle_data, cycle, idx=idx, edges=edges,
-                                    resolution=resolution)
+        data = get_cycle_mean_data(cycle_data, cycle, keys, idx=idx,
+                                   edges=edges, resolution=resolution)
 
         cycle_means[cycle] = data
 
-        # Set crop and edges for 'stress' cycle
+        # Set edges for the 'stress' cycle to the ones from 'simulation' and
+        # idx to the calculated one according to the calculated cropping
         idx = crop_idx
         edges = data['edges']
 

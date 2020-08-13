@@ -210,6 +210,37 @@ def calculate_bin_means_ND(data, bins=None):
              'bin_stds': bin_stds }
 
 
+def concatenate_data_dict(data_dict, keys=None):
+    data = []
+    keys = list(data_dict.keys()) if keys is None else keys
+    columns = []
+    for key in keys:
+        d = data_dict[key]
+        if d.ndim == 1:
+            d = np.expand_dims(d, axis=1)
+        data.append(d)
+        columns.append(d.shape[1])
+
+    return np.concatenate(data, axis=1), keys, columns
+
+
+def separate_data_array(data_array, keys, columns):
+    data = {}
+    start = 0
+    stop = 0
+    for key, column in zip(keys, columns):
+        stop += column
+        d = data_array[:,start:stop].squeeze()
+        if column == 1:
+            d = np.atleast_1d(d)
+        elif d.ndim ==1:
+            d = np.expand_dims(d, axis=1)
+        data[key] = d
+        start = stop
+
+    return data
+
+
 def get_edges(data, bins=None):
     """
     Get edges for bins in data

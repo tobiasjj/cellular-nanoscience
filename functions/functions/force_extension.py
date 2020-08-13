@@ -28,7 +28,8 @@ from ipywidgets import Label, interactive_output, Checkbox, IntText, BoundedIntT
 from matplotlib import pyplot as plt
 from stepfinder import filter_fbnl
 
-from .binning import calculate_bin_means
+from .binning import calculate_bin_means, concatenate_data_dict, separate_data_array
+
 
 def cart2sph(x, y, z, offset_phi=0, positive_phi=False):
     """
@@ -132,17 +133,8 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
     bin_stds = {}
     bin_Ns = {}
     for cycle in [ 'stress', 'release' ]:
-        # Concatenate data array
-        keys = list(data[cycle].keys())
-        columns = []
-        d = []
-        for key in keys:
-            _d = data[cycle][key]
-            if _d.ndim == 1:
-               _d = np.expand_dims(_d, axis=1)
-            columns.append(_d.shape[1])
-            d.append(_d)
-        d = np.concatenate(d, axis=1)
+        # Concatenate data dictionary into one array
+        d, keys, columns = concatenate_data_dict(data[cycle])
 
         # Calculate bin width of time according to bin width of extension
         if bins is None and resolution is None and bin_width_e is not None:
@@ -159,16 +151,11 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
         width[cycle] = result['width']
         bin_Ns[cycle] = result['bin_Ns']
 
-        # Separate data arrays
-        bin_means[cycle] = {}
-        bin_stds[cycle] = {}
-        start = 0
-        stop = 0
-        for key, column in zip(keys, columns):
-            stop += column
-            bin_means[cycle][key] = result['bin_means'][:,start:stop].squeeze()
-            bin_stds[cycle][key] = result['bin_stds'][:,start:stop].squeeze()
-            start = stop
+        # Separate data arrays into data dictionaries
+        bin_means[cycle] = separate_data_array(result['bin_means'], keys,
+                                               columns)
+        bin_stds[cycle] = separate_data_array(result['bin_stds'], keys,
+                                              columns)
 
     # Calculate angles with already binned distance/force data
     if angles_after_binning:
