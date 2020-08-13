@@ -531,13 +531,20 @@ def get_cycle_mean_data(cycle_data, cycle, keys, idx=None, shift_x=None,
 
 
 def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
-                           threshold_f=None, search_window_e=None, edges=None,
-                           resolution=None):
+                           threshold_f=None, search_window_e=None,
+                           resolution_shift_x=None, edges=None,
+                           resolution=None)
+    # Set default resolution to 1/5e-9
+    resolution = 1/5e-9 if resolution is None else resolution
+    resolution_shift_x = resolution \
+        if resolution_shift_x is None else resolution_shift_x
+
     # Determine shift_x to align 'simulation' with 'stress' and 'release' cycle
     try:
         align_x = _get_shift_x(cycle_data, min_x=min_x,
                                max_length_x=max_length_x,
                                threshold_f=threshold_f,
+                               resolution=resolution_shift_x,
                                search_window_e=search_window_e, plot=False)
     except ValueError:
         align_x = 0
