@@ -533,7 +533,7 @@ def get_cycle_mean_data(cycle_data, cycle, keys, idx=None, shift_x=None,
 def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
                            threshold_f=None, search_window_e=None,
                            resolution_shift_x=None, edges=None,
-                           resolution=None)
+                           resolution=None):
     # Set default resolution to 1/5e-9
     resolution = 1/5e-9 if resolution is None else resolution
     resolution_shift_x = 1/5e-9 \
