@@ -536,7 +536,7 @@ def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
                            resolution=None)
     # Set default resolution to 1/5e-9
     resolution = 1/5e-9 if resolution is None else resolution
-    resolution_shift_x = resolution \
+    resolution_shift_x = 1/5e-9 \
         if resolution_shift_x is None else resolution_shift_x
 
     # Determine shift_x to align 'simulation' with 'stress' and 'release' cycle
