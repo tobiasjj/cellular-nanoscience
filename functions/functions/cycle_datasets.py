@@ -541,11 +541,14 @@ def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
                                search_window_e=search_window_e, plot=False)
     except ValueError:
         align_x = 0
-    cycle_keys = ['extension', 'force', 'displacementXYZ', 'forceXYZ',
-                  'positionXYZ', 'distanceXYZ']
+    _cycle_keys = ['extension', 'force', 'displacementXYZ', 'forceXYZ',
+                   'positionXYZ', 'distanceXYZ', 'angle_extension',
+                   'angle_force', 'angle_extension_after', 'angle_force_after']
     _sim_keys = ['extension', 'force', 'displacementXYZ', 'forceXYZ', 'nuz',
                  'e_ext_ssDNA_per_m', 'e_ext_dsDNA_per_m',
                  'e_unzip_DNA_per_m', 'e_lev_per_m']
+    cycle_keys = [key for key in _cycle_keys if key in
+                  cycle_data['stress'].keys()]
     sim_keys = [key for key in _sim_keys if key in
                 cycle_data['simulation'].keys()]
     cycle_mean = {}
@@ -559,6 +562,11 @@ def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
         # set shift_x to calculated one and edges to the ones from 'simulation'
         shift_x = align_x
         edges = cycle_mean[cycle]['edges']
+
+    # Add missing keys
+    cycle_mean['simulation']['settings'] = cycle_data['simulation']['settings']
+    cycle_mean['stress']['info'] = cycle_data['stress']['info']
+    cycle_mean['release']['info'] = cycle_data['release']['info']
 
     return cycle_mean
 

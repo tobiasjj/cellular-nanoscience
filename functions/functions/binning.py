@@ -233,8 +233,8 @@ def separate_data_array(data_array, keys, columns):
         d = data_array[:,start:stop].squeeze()
         if column == 1:
             d = np.atleast_1d(d)
-        elif d.ndim ==1:
-            d = np.expand_dims(d, axis=1)
+        else:
+            d = np.atleast_2d(d)
         data[key] = d
         start = stop
 
