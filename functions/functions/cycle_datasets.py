@@ -548,7 +548,7 @@ def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
                                search_window_e=search_window_e, plot=False)
     except ValueError:
         align_x = 0
-    _cycle_keys = ['extension', 'force', 'displacementXYZ', 'forceXYZ',
+    _cycle_keys = ['extension', 'force', 'time', 'displacementXYZ', 'forceXYZ',
                    'positionXYZ', 'distanceXYZ', 'angle_extension',
                    'angle_force', 'angle_extension_after', 'angle_force_after']
     _sim_keys = ['extension', 'force', 'displacementXYZ', 'forceXYZ', 'nuz',
@@ -814,6 +814,7 @@ def plot_unzipping(x, f, x_sim=None, f_sim=None, nuz=None, x_release=None,
         ax.set_xlabel('(Apparent) ext of construct (nm)')
     if ylabel:
         ax.set_ylabel('Force (pN)')
+    axes = [ax]
 
     # Plot number of simulated unzipped basepairs
     if x_sim is not None and nuz is not None:
@@ -822,6 +823,7 @@ def plot_unzipping(x, f, x_sim=None, f_sim=None, nuz=None, x_release=None,
         ax2.plot(x_sim * 1e9, nuz, color='cyan')
         if ylabel:
             ax2.set_ylabel('# unzip bps')
+        axes.append(ax2)
 
     ax.tick_params(labelbottom=xticklabel)
 
@@ -830,7 +832,7 @@ def plot_unzipping(x, f, x_sim=None, f_sim=None, nuz=None, x_release=None,
     if ylim is not None:
         ax.set_ylim(*ylim)
 
-    return fig, (ax, ax2)
+    return fig, axes
 
 
 def plot_unzipping_3D(x, fXYZ, x_sim=None, fXYZ_sim=None, excited_axis=0,
