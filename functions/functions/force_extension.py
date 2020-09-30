@@ -299,7 +299,8 @@ def _add_angles(data, phi_shift_twopi=False, key_suffix=''):
     return data
 
 
-def plot_force_extension(x, y, ystd=None, yerr=None, ax=None, show=False):
+def plot_force_extension(x, y, ystd=None, yerr=None, label=None, ax=None,
+                         show=False):
     if ax is None:
         # Create new figure
         fig, ax = plt.subplots()
@@ -308,7 +309,7 @@ def plot_force_extension(x, y, ystd=None, yerr=None, ax=None, show=False):
         ax.set_title('Force Extension')
 
     # plot force extension lines and errorbars
-    ax.plot(x * 1e9, y * 1e12)
+    ax.plot(x * 1e9, y * 1e12, label=label)
     if ystd is not None:
         ax.errorbar(x * 1e9, y * 1e12, fmt='none', yerr=ystd * 1e12,
                     color='grey', ecolor='grey', alpha=0.25)
@@ -363,7 +364,7 @@ def plot_angle_extension(x, theta_phi, axes=None, show=False):
 def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
                            resolution=None, sortcolumn=0, dXYZ_factors=None,
                            fXYZ_factors=None, ax=None, autoscale=True,
-                           xlim=None, ylim=None):
+                           xlim=None, ylim=None, info=True):
     """
     Update the figure with force extension data.
 
@@ -382,13 +383,17 @@ def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
                                resolution=resolution, sortcolumn=sortcolumn,
                                dXYZ_factors=dXYZ_factors,
                                fXYZ_factors=fXYZ_factors)
+    if info:
+        srp = tether.stress_release_pairs(i=i)
 
     for c in [ 'stress', 'release' ]:
         e = r['bin_means'][c]['extension']
         f = r['bin_means'][c]['force']
         fstd = r['bin_stds'][c]['force']
         ferr = r['bin_stds'][c]['force'] / np.sqrt(r['bin_Ns'][c])
-        plot_force_extension(e, f, fstd, ferr, ax=ax)
+        if info: label = ' '.join(srp[c]['info'][0])
+        else: label = None
+        plot_force_extension(e, f, fstd, ferr, label=label, ax=ax)
 
     '''
     # Calculate force extension of a dna with a known length and plot it
@@ -399,6 +404,8 @@ def update_force_extension(tether, i=0, posmin=10e-9, bins=None,
         ax.lines[2].set_data([0], [0])
     '''
 
+    if info:
+        ax.legend()
     if autoscale:
         ax.relim()
         # ax.autoscale_view()
@@ -414,12 +421,15 @@ def clear_force_extension(ax=None):
     # clear old force extension lines and errorbars
     ax = ax or plt.gcf().gca()
     ax.set_prop_cycle(None)
-    for l in ax.lines:
+    for l in ax.lines[::-1]:
         l.remove()
     ax.lines.clear()
-    for c in ax.containers:
+    for c in ax.containers[::-1]:
         c.remove()
     ax.containers.clear()
+    for t in ax.texts[::-1]:
+        t.remove()
+    ax.texts.clear()
 
 
 def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
