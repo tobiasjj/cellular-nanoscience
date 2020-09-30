@@ -311,10 +311,10 @@ def plot_force_extension(x, y, ystd=None, yerr=None, ax=None, show=False):
     ax.plot(x * 1e9, y * 1e12)
     if ystd is not None:
         ax.errorbar(x * 1e9, y * 1e12, fmt='none', yerr=ystd * 1e12,
-                    ecolor='grey', alpha=0.25)
+                    color='grey', ecolor='grey', alpha=0.25)
     if yerr is not None:
         ax.errorbar(x * 1e9, y * 1e12, fmt='none', yerr=yerr * 1e12,
-                    ecolor='black', alpha=0.25)
+                    color='grey', ecolor='black', alpha=0.25)
 
     if show:
         ax.get_figure().show()
