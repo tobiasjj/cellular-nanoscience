@@ -225,12 +225,8 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
 
     # Filter the data
     resolution = tether.resolution
-    if filter_time is None:
-        filter_time = 0.005
-    else:
-        # filter_time has priority over filter_length
-        filter_length_e = None
-    window = window_var = max(int(np.round(filter_time * resolution)), 1)
+    ft = 0.005 if filter_time is None else filter_time
+    window = max(int(np.round(ft * resolution)), 1)
     pad_data = True
 
     fbnl_filters = {}
@@ -238,10 +234,11 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
     for cycle in [ 'stress', 'release' ]:
         fbnl_filters[cycle] = {}
         data_filtered[cycle] = {}
-        if filter_length_e is not None:
+        if filter_time is None and filter_length_e is not None:
+            # filter_time has priority over filter_length_e
             speed = _get_speed_approx(tether, i, cycle)
-            filter_time = filter_length_e / speed  # s
-            window = window_var = max(int(np.round(filter_time * resolution)), 1)
+            ft = filter_length_e / speed  # s
+            window = max(int(np.round(ft * resolution)), 1)
         for key in data[cycle]:  # time, extension, force, ...
             d = data[cycle][key]
             if d.ndim == 1: d = [d]
@@ -250,7 +247,7 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
             rs_data = []
             for _d in d:
                 r = filter_fbnl(_d, resolution, window=window,
-                                window_var=window_var, p=edginess,
+                                window_var=window, p=edginess,
                                 pad_data=pad_data)
                 rs.append(r)
                 rs_data.append(np.expand_dims(r.data_filtered, axis=1))
