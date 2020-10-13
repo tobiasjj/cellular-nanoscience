@@ -478,58 +478,6 @@ def _window_sum(data, window_len):
     return window_sum[:-window_len]
 
 
-def get_cycle_mean_data(cycle_data, cycle, keys, idx=None, shift_x=None,
-                        edges=None, resolution=None):
-    """
-    Parameters
-    ----------
-    resolution : float
-        The resolution in m⁻¹ of the binned data. The edges of the bins are
-        determined by using the extension of the `edges_cycle`. Defaults to
-        1/5e-9.
-    """
-    # Concatenate extension, force, etc. into one data array with extension
-    # in the first column
-    data_array, keys, columns = concatenate_data_dict(cycle_data[cycle], keys)
-
-    # Select subset of data according to `idx_key`
-    if idx is not None:
-        data_array = data_array[idx]
-
-    # Shift extension to align with optionally provided edges and revert after
-    # having binned the data
-    shift_x = 0 if shift_x is None else shift_x
-    data_array[:,0] += shift_x
-
-    # Calculate bin means, cast values of simulation mpmath.mpf to float,
-    resolution = 1/5e-9 if resolution is None else resolution
-    result = calculate_bin_means(data_array.astype(float), bins=edges,
-                                 resolution=resolution)
-    edges = result['edges']
-    centers = result['centers']
-    bin_means = result['bin_means']
-
-    # Select values that are valid
-    try:
-        valid = np.logical_and(edges[:-1] >= data_array[:,0].min(),
-                               edges[1:] <= data_array[:,0].max())
-    except ValueError:
-        valid = np.array([], dtype=int)
-
-    # Separata data array into dictionary and revert shift of extension
-    data = separate_data_array(bin_means[valid], keys, columns)
-    data['extension'] -= shift_x
-
-    # Add values not contained in bin_means
-    data['ext_centers'] = centers[valid] - shift_x
-    data['shift_x'] = shift_x
-    data['edges'] = edges - shift_x
-    data['resolution'] = resolution
-    data['sim_idx'] = np.where(valid)[0]
-
-    return data
-
-
 def get_aligned_cycle_mean(cycle_data, min_x=None, max_length_x=None,
                            threshold_f=None, search_window_e=None,
                            resolution_shift_x=None, edges=None,
@@ -705,6 +653,59 @@ def _get_shift_x(cycle_data, min_x=None, max_length_x=None, threshold_f=None,
         fig.show()
 
     return shift_x
+
+
+def get_cycle_mean_data(cycle_data, cycle, keys, idx=None, shift_x=None,
+                        edges=None, resolution=None):
+    """
+    Parameters
+    ----------
+    resolution : float
+        The resolution in m⁻¹ of the binned data. The edges of the bins are
+        determined by using the extension of the `edges_cycle`. Defaults to
+        1/5e-9.
+    """
+    # Concatenate extension, force, etc. into one data array with extension
+    # in the first column
+    data_array, keys, columns = concatenate_data_dict(cycle_data[cycle], keys)
+
+    # Select subset of data according to `idx_key`
+    if idx is not None:
+        data_array = data_array[idx]
+
+    # Shift extension to align with optionally provided edges and revert after
+    # having binned the data
+    shift_x = 0 if shift_x is None else shift_x
+    data_array[:,0] += shift_x
+
+    # Calculate bin means, cast values of simulation mpmath.mpf to float,
+    resolution = 1/5e-9 if resolution is None else resolution
+    result = calculate_bin_means(data_array.astype(float), bins=edges,
+                                 resolution=resolution)
+    edges = result['edges']
+    centers = result['centers']
+    bin_means = result['bin_means']
+
+    # Get indices of bins where the extension is within the limits of the
+    # leftmost and rightmost edge of the extension bins
+    try:
+        valid = np.logical_and(edges[:-1] >= data_array[:,0].min(),
+                               edges[1:] <= data_array[:,0].max())
+    except ValueError:
+        valid = np.array([], dtype=int)
+
+    # Separata data array into dictionary and revert shift of extension
+    data = separate_data_array(bin_means[valid], keys, columns)
+    data['extension'] -= shift_x
+
+    # Add values not contained in bin_means
+    data['ext_centers'] = centers[valid] - shift_x
+    data['shift_x'] = shift_x
+    data['edges'] = edges - shift_x
+    data['resolution'] = resolution
+    data['bins_idx'] = np.where(valid)[0]
+
+    return data
 
 
 def add_areas(cycle_data):
@@ -1002,8 +1003,10 @@ def plot_unspec_bounds(cycle_data, bps_A=None, bps_B=None, axes=None):
     return fig, axes
 
 
-def plot_cycle_data(cycle_data, release=False, bps_A=None, bps_B=None,
-                    shift_x=None, print_shift_x=True, xlim=None, ylim=None):
+def plot_cycle_data(cycle_data, fig=None, axes=None, stress=True,
+                    release=False, simulation=False, angles=False, bps_A=None,
+                    bps_B=None, shift_x=None, print_shift_x=True, xlim=None,
+                    ylim=None):
     # Plot measured and simulated force extension in 3D and angles of force and
     # extension
     shift_x_stress = 0
@@ -1019,10 +1022,15 @@ def plot_cycle_data(cycle_data, release=False, bps_A=None, bps_B=None,
 
     # Get the unzipping data
     data = cycle_data
-    excited_axis = data['excited_axis']
-    x = data['stress']['extension'] + shift_x_stress
-    f = data['stress']['force']
-    fXYZ = np.abs(data['stress']['forceXYZ'])
+    if stress:
+        excited_axis = data['excited_axis']
+        x = data['stress']['extension'] + shift_x_stress
+        f = data['stress']['force']
+        fXYZ = np.abs(data['stress']['forceXYZ'])
+    else:
+        x = None
+        f = None
+        fXYZ = None
     if release:
         x_release = data['release']['extension'] + shift_x_release
         f_release = data['release']['force']
@@ -1031,17 +1039,32 @@ def plot_cycle_data(cycle_data, release=False, bps_A=None, bps_B=None,
         x_release = None
         f_release = None
         fXYZ_release = None
-    x_sim = data['simulation']['extension']
-    f_sim = data['simulation']['force']
-    fXYZ_sim = data['simulation']['forceXYZ']
-    nuz = data['simulation']['nuz']
-    # Get the angles of force and extension vectors
-    # 0: theta_extension, 1: phi_exension
-    ext_theta_phi = data['stress']['angle_extension_after']
-    # 0: theta_force, 1: phi_force
-    force_theta_phi = data['stress']['angle_force_after']
+    if simulation:
+        x_sim = data['simulation']['extension']
+        f_sim = data['simulation']['force']
+        fXYZ_sim = data['simulation']['forceXYZ']
+        nuz = data['simulation']['nuz']
+    else:
+        x_sim = None
+        f_sim = None
+        fXYZ_sim = None
+        nuz = None
+    if angles:
+        # Get the angles of force and extension vectors
+        # 0: theta_extension, 1: phi_exension
+        ext_theta_phi = data['stress']['angle_extension_after']
+        # 0: theta_force, 1: phi_force
+        force_theta_phi = data['stress']['angle_force_after']
 
-    fig, axes = plt.subplots(3, 1)
+    if fig is None and axes is None:
+        number_of_axes = 2
+        if angles:
+            number_of_axes += 1
+        fig, axes = plt.subplots(number_of_axes, 1)
+    elif fig is None:
+        fig = axes[0].get_figure()
+    elif axes is None:
+        axes = fig.get_axes()
 
     plot_unspec_bounds(cycle_data, bps_A=bps_A, bps_B=bps_B, axes=axes)
     plot_unzipping(x, f, x_sim=x_sim, f_sim=f_sim, nuz=nuz,
@@ -1052,7 +1075,9 @@ def plot_cycle_data(cycle_data, release=False, bps_A=None, bps_B=None,
                       excited_axis=excited_axis, x_release=x_release,
                       fXYZ_release=fXYZ_release, ax=axes[1], xlim=xlim,
                       ylim=ylim, xlabel=False, xticklabel=False, ylabel=True)
-    plot_angles_fe(x, ext_theta_phi, force_theta_phi, ax=axes[2], xlim=xlim)
+    if angles:
+        plot_angles_fe(x, ext_theta_phi, force_theta_phi, ax=axes[2],
+                       xlim=xlim)
 
     if print_shift_x:
         ax = axes[0]
