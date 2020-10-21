@@ -103,7 +103,7 @@ def _get_forceclamp_data(dataset, experiment, results_region_name,
     positionXY_feedback = positionXY - data[:,1:]
     positionXYZ_feedback = np.c_[positionXY_feedback, positionZ]
     distanceXYZ = \
-        pyoti.evaluate.tether.distanceXYZ(psdXYZ, positionXYZ_feedback,
+        pyoti.evaluate.tether.distanceXYZ(positionXYZ_feedback, psdXYZ=psdXYZ,
                                         calibration=results_region.calibration)
     distance = pyoti.evaluate.tether.distance(distanceXYZ, positionXY_feedback,
                                               posmin=posmin)
