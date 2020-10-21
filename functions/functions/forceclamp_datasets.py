@@ -103,8 +103,8 @@ def _get_forceclamp_data(dataset, experiment, results_region_name,
     positionXY_feedback = positionXY - data[:,1:]
     positionXYZ_feedback = np.c_[positionXY_feedback, positionZ]
     distanceXYZ = \
-        pyoti.evaluate.tether.distanceXYZ(results_region.calibration,
-                                          psdXYZ, positionXYZ_feedback)
+        pyoti.evaluate.tether.distanceXYZ(psdXYZ, positionXYZ_feedback,
+                                        calibration=results_region.calibration)
     distance = pyoti.evaluate.tether.distance(distanceXYZ, positionXY_feedback,
                                               posmin=posmin)
     extension = \
@@ -115,8 +115,9 @@ def _get_forceclamp_data(dataset, experiment, results_region_name,
                          edginess=edginess)
 
     # Get and filter the force
-    forceXYZ = pyoti.evaluate.tether.forceXYZ(results_region.calibration,
-                                              psdXYZ, positionZ)
+    forceXYZ = pyoti.evaluate.tether.forceXYZ(psdXYZ,
+                                        calibration=results_region.calibration,
+                                        positionZ=positionZ)
     force = pyoti.evaluate.tether.force(forceXYZ, positionXY_feedback,
                                         posmin=posmin, sign_axes=sign_axes)
     force_filtered, fbnl_force_filters = \
