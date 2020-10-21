@@ -26,13 +26,15 @@ SIMULATIONS_DIR = './simulations'
 CYCLES_DATAS_DIR = './cycles_datas'
 CYCLES_MEANS_DIR = './cycles_means'
 
-def create_dataset(directory, dbname, kappa_z_factor, shift_x, c_rad52=0,
-                   c_count=0, number_of_pairs=None, key=None, datadir='data'):
+def create_dataset(directory, dbname, beta_z_factor, kappa_z_factor, shift_x,
+                   c_rad52=0, c_count=0, number_of_pairs=None, key=None,
+                   datadir='data'):
     directory = os.path.join(directory, datadir)
     dataset = {
         'key': key,
         'directory': directory,
         'dbname': dbname,
+        'beta_z_factor': beta_z_factor,
         'kappa_z_factor': kappa_z_factor,
         'shift_x': shift_x,
         'c_rad52': c_rad52,
@@ -96,6 +98,7 @@ def save_cycles_mean(cycles_mean, cycles_means_dir=None):
 
 def get_cycles_data(dataset, i=None, results_region_name=None,
                     deactivate_baseline_mod=False, baseline_decimate=1,
+                    deactivate_rotation_mods=False,
                     resolution_sf=None, simulation_settings_file=None,
                     simulations_dir=None, individual_posZ=True, fbnl=True,
                     angles=True, angles_after_processing=True,
@@ -114,6 +117,8 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
     resolution_sf = RESOLUTION_SF if resolution_sf is None else resolution_sf
 
     # Open experiment
+    # Deactivate baseline modification or set other baseline decimate
+    # Deactivate rotation modifications
     dbfile = get_dbfile_path(dataset, DATA_BASEDIR)
     exp = pyoti.open_experiment(filename=dbfile, return_last_created=False)
     try:
@@ -121,10 +126,18 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
         if deactivate_baseline_mod:
             mod.active = False
         else:
-            mod.iattributes.baseline_decimate = baseline_decimate
+            mod.iattributes['baseline_decimate'] = baseline_decimate
     except:
         pass
+    if deactivate_rotation_mods:
+        for mod_name in ['rotation_mod', 'rotation_2nd_mod']:
+            mod = exp.modification(mod_name)
+            try:
+                mod.active = False
+            except:
+                pass
 
+    # Set cached region
     with suppress_stdout():
         exp.set_cached_region(results_region_name)
 
@@ -132,8 +145,6 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
     results_region = exp.region(results_region_name)
     tether = pyoti.create_tether(region=results_region,
                                  resolution_sf=resolution_sf)
-    tether.update()
-    # tether.info(i=i)
     number_of_pairs = len(tether.stress_release_pairs()['stress']['idx'])
     dataset['number_of_pairs'] = number_of_pairs
 
@@ -164,6 +175,7 @@ def get_cycles_data(dataset, i=None, results_region_name=None,
                 'results_region_name': results_region_name,
                 'deactivate_baseline_mod': deactivate_baseline_mod,
                 'baseline_decimate': baseline_decimate,
+                'deactivate_rotation_mods': deactivate_rotation_mods,
                 'resolution_sf': resolution_sf,
                 'simulation_settings_file': simulation_settings_file,
                 'simulations_dir': simulations_dir,
@@ -207,8 +219,11 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     t = tether
 
     # Get force/extension stress/release force extension data and angles, and
-    # fbnl_filter or bin the data considerung the correction factor for kappa_z
+    # fbnl_filter or bin the data considerung the correction factors for z
+    beta_z_factor = dataset['beta_z_factor']
     kappa_z_factor = dataset['kappa_z_factor']
+    z_factor = beta_z_factor * kappa_z_factor
+    dXYZ_factors = np.array([1, 1, beta_z_factor])
     fXYZ_factors = np.array([1, 1, kappa_z_factor])
     if fbnl:
         processing_function = fbnl_force_extension
@@ -229,7 +244,8 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     process_kwargs.update(kwargs)
     msg = 'Process data for cycle i = {} ...                  \r'.format(i)
     print(msg, end='', flush=True)
-    result = processing_function(t, i, fXYZ_factors=fXYZ_factors,
+    result = processing_function(t, i, dXYZ_factors=dXYZ_factors,
+                                 fXYZ_factors=fXYZ_factors,
                                  angles=angles,
                                  phi_shift_twopi=phi_shift_twopi,
                                  **process_kwargs)
@@ -249,12 +265,11 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
             data[cycle][key + '_raw'] = value
         data[cycle].update(result[result_data_key][cycle])
 
-    # Get/do the simulation considering the correction factor for kappa_z
+    # Get/do the simulation considering the correction factor for z
     simulation_settings_file = SIMULATION_SETTINGS_FILE \
         if simulation_settings_file is None else simulation_settings_file
     simulations_dir = SIMULATIONS_DIR if simulations_dir is None \
         else simulations_dir
-    kappa_z_factor = dataset['kappa_z_factor']
     if individual_posZ:
         posZ = None
     else:
@@ -263,7 +278,7 @@ def _get_cycle_data(dataset, tether, i, simulation_settings_file=None,
     print(msg, end='', flush=True)
     simulation = get_simulation(t, i, simulation_settings_file, posZ=posZ,
                                 individual_posZ=individual_posZ,
-                                kappa_z_factor=kappa_z_factor,
+                                kappa_z_factor=z_factor,
                                 excited_axis=excited_axis,
                                 simulations_dir=simulations_dir)
     sim_key = uzsi.get_key(**simulation['settings'])

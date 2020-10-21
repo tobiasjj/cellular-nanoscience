@@ -118,9 +118,10 @@ def binned_force_extension(tether, i, posmin=10e-9, bins=None, resolution=None,
         13,14,15,16: theta (13,15) and phi (14,16) for extension and force
     """
     # Get the force, extension, etc. data from the tether
-    data = tether.force_extension_pair(i=i, posmin=posmin,
-                                       dXYZ_factors=dXYZ_factors,
-                                       fXYZ_factors=fXYZ_factors)
+    data = tether.force_extension_pairs(i=i, posmin=posmin,
+                                        dXYZ_factors=dXYZ_factors,
+                                        fXYZ_factors=fXYZ_factors,
+                                        reduce_list=True)
 
     # Add angles of force and extension
     if angles:
@@ -215,9 +216,9 @@ def fbnl_force_extension(tether, i, posmin=10e-9, filter_time=None,
         the individual FBNL_Filter_results of the filtered data
     """
     # Get the force, extension, etc. data from the tether
-    data = tether.force_extension_pair(i=i, posmin=posmin,
-                                       dXYZ_factors=dXYZ_factors,
-                                       fXYZ_factors=fXYZ_factors)
+    data = tether.force_extension_pairs(i=i, posmin=posmin,
+                                        dXYZ_factors=dXYZ_factors,
+                                        fXYZ_factors=fXYZ_factors)
 
     # Add angles of force and extension
     if angles:
@@ -440,7 +441,7 @@ def show_force_extension(tether, i=0, posmin=10e-9, bins=0, resolution=0,
     ----------
     i : int
         Index of force extension pair. See method
-        `tether.force_extension_pair()`.
+        `tether.force_extension_pairs()`.
     xlim : (float, float), optional
         Xlimit of force extension axis.
     ylim : (float, float), optional
@@ -755,7 +756,7 @@ def plot_unzip_data(tether, I, ax=None, fbnl=False, shift_x=0e-9, t_delta=15,
         ### Get and plot raw force extension
         if plot_raw:
             # Get raw extension and force for stress and release cycle
-            pair = tether.force_extension_pair(i=i)
+            pair = tether.force_extension_pairs(i=i, reduce_list=True)
             extension_raw = np.r_[pair['stress']['extension'],
                                   pair['release']['extension']]
             force_raw = np.r_[pair['stress']['force'],
